@@ -177,8 +177,6 @@ def main(name):
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
-    # print(lines)
-    # k_means_for_lines(lines)
     find_grid_for_theta(resized_image, theta=110)
     return
 
