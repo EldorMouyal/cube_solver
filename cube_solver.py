@@ -38,6 +38,7 @@ def display_image(image, title):
     cv2.imshow("title", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return
 
 
 def display_canny(image):
