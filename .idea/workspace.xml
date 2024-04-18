@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3011254d-5ac2-4361-9be4-a0d9b52b0608" name="Changes" comment="--">
+    <list default="true" id="3011254d-5ac2-4361-9be4-a0d9b52b0608" name="Changes" comment="fixed display image method to work with cv2">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cube_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/cube_solver.py" afterDir="false" />
     </list>
@@ -147,7 +147,23 @@
       <option name="project" value="LOCAL" />
       <updated>1713380177770</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="fixed display image method to work with cv2">
+      <option name="closed" value="true" />
+      <created>1713428216185</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1713428216185</updated>
+    </task>
+    <task id="LOCAL-00004" summary="fixed display image method to work with cv2">
+      <option name="closed" value="true" />
+      <created>1713428245045</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1713428245045</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -196,6 +212,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="class for cube face added&#10;K-Means method added&#10;draw Lines method added" />
     <MESSAGE value="--" />
-    <option name="LAST_COMMIT_MESSAGE" value="--" />
+    <MESSAGE value="fixed display image method to work with cv2" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed display image method to work with cv2" />
   </component>
 </project>
