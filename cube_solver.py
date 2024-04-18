@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
+import bisect
 
 # I installed a package called kociemba
 # to solve a rubix cube all we have to do is:
@@ -34,18 +35,15 @@ from sklearn.cluster import KMeans
 
 
 def display_image(image, title):
-    plt.imshow(image)
-    plt.title(title)
-    plt.axis('off')
-    plt.show()
+    cv2.imshow("title", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def display_canny(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-    cv2.imshow("Edges", edges)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display_image(edges, "Canny edges")
     return edges
 
 
@@ -64,6 +62,33 @@ def k_means_for_lines(lines):
             rhos.append(rho)
             avg_thetas += theta
     avg_thetas = avg_thetas/(len(rhos))
+    print(rhos)
+    print(avg_thetas)
+    rho_2d = np.array(rhos).reshape(-1, 1)
+    kmeans = KMeans(n_clusters=7)
+    kmeans.fit(rho_2d)
+    # cluster_centers = sorted(kmeans.cluster_centers_)
+    print(kmeans.cluster_centers_)
+    return kmeans.cluster_centers_, avg_thetas
+
+
+def k_means_for_lines2(lines):
+    rho_theta = []
+    rhos = []
+    avg_thetas = 0
+    for line in lines:
+        rho, theta = line[0]
+        is_distinct = True
+        # Check if rho is distinct from every other rho by more than 3
+        for existing_rho in rhos:
+            if abs(rho - existing_rho) <= 20:
+                is_distinct = False
+                break
+        if is_distinct:
+            rhos.append(rho)
+            avg_thetas += theta
+    avg_thetas = avg_thetas / (len(rhos))
+    print(rhos)
     print(avg_thetas)
     rho_2d = np.array(rhos).reshape(-1, 1)
     kmeans = KMeans(n_clusters=7)
@@ -106,14 +131,12 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str):
     max_angle = np.deg2rad(theta + 20)  # Convert to radians
 
     # Detect lines using Hough Line Transform
-    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=90, min_theta=min_angle, max_theta=max_angle)
+    lines = cv2.HoughLines(edges, rho=2, theta=np.deg2rad(1), threshold=90, min_theta=min_angle, max_theta=max_angle)
     # lines = cv2.HoughLines(edges, 2,  np.pi / 180,  100)
     # Draw the detected lines on the original image
     draw_lines_from_hough(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
-    cv2.imshow(headline, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display_image(image, headline)
     return lines
 
 
@@ -130,9 +153,7 @@ def find_grid_for_theta(image, theta: int):
     # rhos, avg_theta = distinct_take_lines(lines)
     rho_theta = [(r, avg_theta) for r in rhos]
     draw_lines_from_hough(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
-    cv2.imshow(headline, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display_image(image, headline)
     return
 
 
@@ -167,17 +188,17 @@ def fill_face_left(image, h_lines, v_lines, face):
 
 
 def main(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    # Example string and solution for a cube:
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     print(kociemba.solve(cube))
+    # Actual program
     image_path = "rubix2.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
-    find_grid_for_theta(resized_image, theta=110)
+    find_grid_for_theta(resized_image, theta=60)
     return
 
 
