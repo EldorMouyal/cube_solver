@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
+import bisect
 
 # I installed a package called kociemba
 # to solve a rubix cube all we have to do is:
@@ -34,19 +35,89 @@ from sklearn.cluster import KMeans
 
 
 def display_image(image, title):
-    plt.imshow(image)
-    plt.title(title)
-    plt.axis('off')
-    plt.show()
+    cv2.imshow("title", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    return
 
 
 def display_canny(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-    cv2.imshow("Edges", edges)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display_image(edges, "Canny edges")
     return edges
+
+
+def polar_to_cartesian(rho, theta):
+    x = rho * np.cos(theta)
+    y = rho * np.sin(theta)
+    return x, y
+
+
+def extract_pairs(array_of_arrays):
+    res = []
+    for sub_array in array_of_arrays:
+        res.extend(sub_array)
+    return res
+
+
+def find_x_given_y(rho, theta, y):
+    x, y_polar = polar_to_cartesian(rho, theta)
+    # Calculate the x value when y = y_polar
+    if y_polar == y:
+        return x
+    else:
+        # The line is not parallel to the y-axis, so solve for x using the equation of the line
+        x = (rho - y * np.sin(theta)) / np.cos(theta)
+        # print("x value for ", rho, ", ", theta, " when y =", y, ":", x)
+        return x
+
+
+def filter_vertical_anomalies(lines, y_value=200, Y=400):
+    n_bins = 10
+    # Divide lines into Bins
+    bins = [[] for _ in range(n_bins)]
+    for rho, theta in lines:
+        x_val = int(find_x_given_y(rho, theta, y_value))
+        index = x_val / (Y/n_bins)
+        print(index)
+        if 0 <= index < n_bins:
+            bins[int(index)].append([rho, theta])
+    print(bins)
+    # filtered = filter_anomalies_theta(bins, 0.2)
+    filtered = filter_closest_pair_to_average(bins)
+    return extract_pairs(filtered)
+
+
+def filter_anomalies_theta(bins, threshold_percent):
+    filtered_bins = []
+    for _bin in bins:
+        if not _bin:  # Skip empty bins
+            continue
+        # Calculate the average of the second values
+        second_values = [pair[1] for pair in _bin]
+        avg_theta = sum(second_values) / len(second_values)
+        # Filter pairs based on the deviation from the average
+        filtered_pairs = []
+        for pair in _bin:
+            if abs(pair[1] - avg_theta) / avg_theta <= threshold_percent:
+                filtered_pairs.append(pair)
+        filtered_bins.append(filtered_pairs)
+    return filtered_bins
+
+
+def filter_closest_pair_to_average(bins):
+    filtered_bins = []
+    for _bin in bins:
+        if not _bin:  # Skip empty bins
+            continue
+        # Calculate the average of the second values
+        second_values = [pair[1] for pair in _bin]
+        avg_theta = sum(second_values) / len(second_values)
+        # Find the pair whose second value is closest to the average
+        closest_pair = min(_bin, key=lambda pair: abs(pair[1] - avg_theta))
+        filtered_bins.append([closest_pair])
+    return filtered_bins
 
 
 def k_means_for_lines(lines):
@@ -64,6 +135,7 @@ def k_means_for_lines(lines):
             rhos.append(rho)
             avg_thetas += theta
     avg_thetas = avg_thetas/(len(rhos))
+    print(rhos)
     print(avg_thetas)
     rho_2d = np.array(rhos).reshape(-1, 1)
     kmeans = KMeans(n_clusters=7)
@@ -71,6 +143,52 @@ def k_means_for_lines(lines):
     # cluster_centers = sorted(kmeans.cluster_centers_)
     print(kmeans.cluster_centers_)
     return kmeans.cluster_centers_, avg_thetas
+
+
+def k_means_for_lines2(lines):
+    rho_theta = []
+    rhos = []
+    avg_thetas = 0
+    for rho, theta in lines:
+        is_distinct = True
+        # Check if rho is distinct from every other rho by more than 3
+        for existing_rho in rhos:
+            if abs(rho - existing_rho) <= 20:
+                is_distinct = False
+                break
+        if is_distinct:
+            rho_theta.append([rho, theta])
+            rhos.append(rho)
+            avg_thetas += theta
+    avg_thetas = avg_thetas / (len(rhos))
+    print(rho_theta)
+    print(avg_thetas)
+    rho_2d = np.array(rhos).reshape(-1, 1)
+    kmeans = KMeans(n_clusters=7)
+    kmeans.fit(rho_2d)
+    k_means = [item for sublist in kmeans.cluster_centers_ for item in sublist]  # flatten the cluster centers array
+    print(k_means)
+    return find_closest_rho(rho_theta, k_means)
+
+
+def find_closest_rho(rho_theta, arr):
+    rho_theta.sort(key=lambda x: x[0])  # Sort the larger array based on the first values
+    closest_pairs = []
+    for y in arr:
+        # Use bisect to find the insertion point of x in the sorted Y array
+        index = bisect.bisect_left([pair[0] for pair in rho_theta], y)
+
+        # Check if r is greater than all numbers in K or if r is less than all numbers in K
+        if index == len(rho_theta):
+            closest_pairs.append(rho_theta[-1])
+        elif index == 0:
+            closest_pairs.append(rho_theta[0])
+        else:
+            # Get the closest pair in rho_theta to y based on the first value in each pair
+            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index-1][0] else rho_theta[index-1]
+            closest_pairs.append(closest_pair)
+    print(closest_pairs)
+    return closest_pairs
 
 
 def distinct_take_lines(lines):  # DOESN'T WORK
@@ -106,14 +224,12 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str):
     max_angle = np.deg2rad(theta + 20)  # Convert to radians
 
     # Detect lines using Hough Line Transform
-    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=90, min_theta=min_angle, max_theta=max_angle)
+    lines = cv2.HoughLines(edges, rho=2, theta=np.deg2rad(1), threshold=90, min_theta=min_angle, max_theta=max_angle)
     # lines = cv2.HoughLines(edges, 2,  np.pi / 180,  100)
     # Draw the detected lines on the original image
-    draw_lines_from_hough(image, lines[:, 0], thickness=2)
+    draw_lines_by_polar(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
-    cv2.imshow(headline, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display_image(image, headline)
     return lines
 
 
@@ -126,17 +242,18 @@ def find_grid_for_theta(image, theta: int):
         headline = "Obtuse theta"
     edges = display_canny(image)
     lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline)
-    rhos, avg_theta = k_means_for_lines(lines)
+    lines = filter_vertical_anomalies(lines[:, 0], Y=image.shape[1], y_value=image.shape[1]/2)
+    draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
+    display_image(image, "after filtering")
+    # rhos, avg_theta = k_means_for_lines(lines)
     # rhos, avg_theta = distinct_take_lines(lines)
-    rho_theta = [(r, avg_theta) for r in rhos]
-    draw_lines_from_hough(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
-    cv2.imshow(headline, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    rho_theta = k_means_for_lines2(lines)
+    draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
+    display_image(image, headline)
     return
 
 
-def draw_lines_from_hough(image, rho_theta, color=(0, 0, 255), thickness=1):
+def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
     if rho_theta is not None:
         for rho, theta in rho_theta:
             # Calculate line endpoints
@@ -167,17 +284,17 @@ def fill_face_left(image, h_lines, v_lines, face):
 
 
 def main(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    # Example string and solution for a cube:
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     print(kociemba.solve(cube))
-    image_path = "rubix2.jpg"
+    # Actual program
+    image_path = "rubix1.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
-    find_grid_for_theta(resized_image, theta=110)
+    find_grid_for_theta(resized_image, theta=0)
     return
 
 
