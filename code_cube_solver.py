@@ -105,7 +105,7 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str):
     min_angle = np.deg2rad(theta - 20)  # Convert to radians
     max_angle = np.deg2rad(theta + 20)  # Convert to radians
 
-    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=72, min_theta=min_angle, max_theta=max_angle)
+    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=87, min_theta=min_angle, max_theta=max_angle)
     # Draw the detected lines on the original image
     draw_lines_from_hough(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
@@ -163,23 +163,60 @@ def fill_face_right(image, h_lines, v_lines, face):
 def fill_face_left(image, h_lines, v_lines, face):
     return None
 
-def get_hough_params(image,theta):
-    params_thres_min=check_threshold_correctness(image,theta,50)
-    params_thres_max = check_threshold_correctness(image, theta, 200)
-    print("Min "+str(params_thres_min))
-    print("Max "+str(params_thres_max))
-    params_middle=int((0.55 * params_thres_min[0] + 0.45 * params_thres_max[0]))
-    if((params_thres_min[1] > params_thres_max[1]) ):
-        return params_thres_max
-    elif (params_thres_max[0]==200):
-        return int((0.58 * params_thres_min[0] + 0.42 * params_thres_max[0])), params_thres_min[1]
-    elif ((params_thres_min[1] < params_thres_max[1])):
-        return params_thres_min
-    elif(params_thres_min[0]==50):
-        return int((0.42 * params_thres_min[0] + 0.58 * params_thres_max[0])), params_thres_max[1]
-    else:
-        return params_middle,params_thres_min[1]
+def check_threshold_if_load_lines(lines,theta):
+    bins_size=[]
+    for i in range(0, 400, 20):
+        rhos = []
+        for line in lines:
+            _rho, _theta = line[0]
+            x = get_x_by_rho_theta(_rho, _theta, theta)
+            if (x >= i and x <= i + 20):
+                rhos.append(_rho)
+        bins_size.append(len(rhos))
+    #for i in range(len(bins_size)):
+    #    print("size of bins: ", i," is ", bins_size[i])
+    check = False
+    for i in range(0,len(bins_size)-1,1):
+        if(bins_size[i] > 20):
+            check = True
+            break
+    return check
 
+
+def fix_threshold_if_load_lines(image,theta,hough_params):
+    threshold=hough_params[0]
+    min_angle = np.deg2rad(theta - 20)
+    max_angle = np.deg2rad(theta + 20)
+    edges = display_canny(image, hough_params[1])
+    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=hough_params[0], min_theta=min_angle,max_theta=max_angle)
+    iterations=0
+    while(check_threshold_if_load_lines(lines,theta)==True and check_by_bins(lines,theta)==0):
+        threshold=threshold+1
+        lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=threshold, min_theta=min_angle,
+                               max_theta=max_angle)
+        iterations+=1
+    if iterations==0:
+        return hough_params
+    else:
+        return threshold-1,hough_params[1]
+
+
+def get_hough_params(image,theta):
+    params_thres_min = check_threshold_correctness(image,theta,50)
+    params_thres_max = check_threshold_correctness(image, theta, 200)
+    params_res = 0
+    if((params_thres_min[1] > params_thres_max[1]) ):
+        params_res=params_thres_max
+    elif (params_thres_max[0]==200):
+        params_res=int((0.58 * params_thres_min[0] + 0.42 * params_thres_max[0])), params_thres_min[1]
+    elif ((params_thres_min[1] < params_thres_max[1])):
+        params_res=params_thres_min
+    elif(params_thres_min[0]==50):
+        params_res=int((0.42 * params_thres_min[0] + 0.58 * params_thres_max[0])), params_thres_max[1]
+    else:
+        params_res=int((0.55 * params_thres_min[0] + 0.45 * params_thres_max[0])),params_thres_min[1]
+    params_if_load_lines=fix_threshold_if_load_lines(image,theta,params_res)
+    return int(0.5*params_if_load_lines[0]+0.5*params_res[0]),params_res[1]
 
 def check_threshold_correctness(image,theta,base_threshold):
     original_base_threshold=base_threshold
@@ -202,7 +239,6 @@ def check_threshold_correctness(image,theta,base_threshold):
         if(lines is None):
             base_threshold=base_threshold-1
             continue
-        #check_many_lines_on_one_bin
         res=check_by_bins(lines,theta)
         if(check_by_bins(lines,theta)==1):
             base_threshold=base_threshold+5
@@ -271,7 +307,6 @@ def find_hough_params(edges,min_angle,max_angle): #DOESN'T WORK
                 pass_thetas=False
                 base_threshold =base_threshold-1
                 break
-
     return base_threshold+1
 
 
@@ -280,7 +315,7 @@ def main(name):
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     #print(kociemba.solve(cube))
-    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_13.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_6.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
@@ -288,11 +323,12 @@ def main(name):
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
     #find_grid_for_theta(resized_image, theta=110)
 
-
     edges = display_canny(resized_image)
-    lines = hough_lines_for_theta(image=resized_image, edges=edges, theta=0, headline="Vertical Lines")
-    #print(check_by_bins(lines,110))
-    #print(get_hough_params(resized_image,0))
+    lines = hough_lines_for_theta(image=resized_image, edges=edges, theta=60, headline="Vertical Lines")
+    print(check_by_bins(lines,60))
+    #print(get_hough_params(resized_image,60))
+    #params=get_hough_params(resized_image,60)
+    #print(check_threshold_if_load_lines(lines, 110))
     return
 
 
