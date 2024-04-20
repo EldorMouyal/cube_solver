@@ -105,7 +105,7 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str):
     min_angle = np.deg2rad(theta - 20)  # Convert to radians
     max_angle = np.deg2rad(theta + 20)  # Convert to radians
 
-    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=100, min_theta=min_angle, max_theta=max_angle)
+    lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=72, min_theta=min_angle, max_theta=max_angle)
     # Draw the detected lines on the original image
     draw_lines_from_hough(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
@@ -168,12 +168,17 @@ def get_hough_params(image,theta):
     params_thres_max = check_threshold_correctness(image, theta, 200)
     print("Min "+str(params_thres_min))
     print("Max "+str(params_thres_max))
-    if((params_thres_min[1] > params_thres_max[1])):
-        return params_thres_min
-    elif ((params_thres_min[1] < params_thres_max[1])):
+    params_middle=int((0.55 * params_thres_min[0] + 0.45 * params_thres_max[0]))
+    if((params_thres_min[1] > params_thres_max[1]) ):
         return params_thres_max
+    elif (params_thres_max[0]==200):
+        return int((0.58 * params_thres_min[0] + 0.42 * params_thres_max[0])), params_thres_min[1]
+    elif ((params_thres_min[1] < params_thres_max[1])):
+        return params_thres_min
+    elif(params_thres_min[0]==50):
+        return int((0.42 * params_thres_min[0] + 0.58 * params_thres_max[0])), params_thres_max[1]
     else:
-        return int((0.82*params_thres_min[0]+0.18*params_thres_max[0])),params_thres_min[1]
+        return params_middle,params_thres_min[1]
 
 
 def check_threshold_correctness(image,theta,base_threshold):
@@ -197,6 +202,7 @@ def check_threshold_correctness(image,theta,base_threshold):
         if(lines is None):
             base_threshold=base_threshold-1
             continue
+        #check_many_lines_on_one_bin
         res=check_by_bins(lines,theta)
         if(check_by_bins(lines,theta)==1):
             base_threshold=base_threshold+5
@@ -209,87 +215,30 @@ def check_threshold_correctness(image,theta,base_threshold):
     print("Please provide me another image")
     return -1
 
-def check_by_bins(lines,theta):
+def get_x_by_rho_theta(_rho, _theta,theta):
     if(theta == 0):
-        return check_by_bins_theta_0(lines)
+        return (_rho - 200 * np.sin(_theta)) / (np.cos(_theta))
     elif(theta == 60):
-        return check_by_bins_theta_60(lines)
+        return _rho/(np.cos(_theta) + np.sin(_theta))
     else:
-        return check_by_bins_theta_110(lines)
+        return (_rho-400*np.sin(_theta))/(np.cos(_theta)-np.sin(_theta))
 
-def check_places(places):
-    places_spreading_left=False;
-    places_spreading_right = False;
-    for place in places:
-        if (place!=places[0] and place-previous_place > 60):
-            return False
-        previous_place=place
-    return True
-
-def check_by_bins_theta_0(lines):
+def check_by_bins(lines,theta):
     bins = 0
-    places=[]
     for i in range(0, 400, 20):
         rhos=[]
         for line in lines:
             _rho, _theta = line[0]
-            x = (_rho - 200 * np.sin(_theta)) / (np.cos(_theta))
+            x = get_x_by_rho_theta(_rho, _theta, theta)
             if (x >= i and x <= i + 20):
                 rhos.append(_rho)
         if (len(rhos) > 0):
             bins = bins + 1
-            places.append(i)
-           # print("Places Found: " + str(i))
-    places.sort();
-   # print("Bins Number: " + str(bins))
-    if (bins >= 12):
+    #print(bins)
+    if (bins >= 13):
         # Too much lines
         return 1
-    elif (bins <= 6 or check_places(places)==False):
-        # Missing lines
-        return -1
-    else:
-        return 0
-
-def check_by_bins_theta_60(lines):
-    bins = 0
-    places = []
-    for i in range(0, 400, 20):
-        rhos = []
-        for line in lines:
-            _rho, _theta = line[0]
-            x = _rho/(np.cos(_theta) + np.sin(_theta))
-            if (x >= i and x <= i+20):
-                rhos.append(_rho)
-        if (len(rhos) > 0):
-            bins = bins + 1
-    if (bins >= 11):
-        # Too much lines
-        return 1
-    elif (bins <= 6 or (check_places(places)==False)):
-        # Missing lines
-        return -1
-    else:
-        return 0
-
-def check_by_bins_theta_110(lines):
-    bins = 0
-    places = []
-    for i in range(0, 400, 20):
-        rhos = []
-        for line in lines:
-            _rho, _theta = line[0]
-            x = (_rho-400*np.sin(_theta))/(np.cos(_theta)-np.sin(_theta))
-            if (x >= i and x <= i + 20):
-                rhos.append(_rho)
-        if (len(rhos) > 0):
-            bins = bins + 1
-            places.append(i)
-   # print("Bins Number: " + str(bins))
-    if (bins >= 11):
-        # Too much lines
-        return 1
-    elif (bins <= 6 or check_places(places)==False):
+    elif (bins <= 6):
         # Missing lines
         return -1
     else:
@@ -331,7 +280,7 @@ def main(name):
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     #print(kociemba.solve(cube))
-    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_2.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_13.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
@@ -339,10 +288,11 @@ def main(name):
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
     #find_grid_for_theta(resized_image, theta=110)
 
+
     edges = display_canny(resized_image)
-    lines = hough_lines_for_theta(image=resized_image, edges=edges, theta=110, headline="Vertical Lines")
-    #print(check_by_bins(lines,0))
-   # print(get_hough_params(resized_image,110))
+    lines = hough_lines_for_theta(image=resized_image, edges=edges, theta=0, headline="Vertical Lines")
+    #print(check_by_bins(lines,110))
+    #print(get_hough_params(resized_image,0))
     return
 
 
