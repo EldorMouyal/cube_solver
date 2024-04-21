@@ -108,7 +108,7 @@ def find_x_given_y(rho, theta, y):
 
 
 def filter_vertical_anomalies(rho_theta, im_size):
-    n_bins = 20
+    n_bins = 10  #may be change to 10 15
     # Divide lines into Bins
     y_value = im_size/2
     bins = [[] for _ in range(n_bins)]
@@ -299,7 +299,13 @@ def find_grid_for_theta(image, theta: int):
         headline = "Obtuse theta"
     thresholds=get_hough_params(image, theta)
     edges = display_canny(image,thresholds[1])
-    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,hough_threshold=thresholds[0])
+    before_filter_lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,hough_threshold=thresholds[0])
+    print("lines before filter ",len(before_filter_lines))
+    after_filter_lines=filter_lines_unusual_thetas(before_filter_lines,theta)
+    print("lines after filter ",len(after_filter_lines))
+    if(len(after_filter_lines)==0):
+        lines=before_filter_lines
+    else: lines=after_filter_lines
     if theta == 0:
         lines = filter_vertical_anomalies(lines[:, 0], im_size=image.shape[1])
     elif theta == 60:
@@ -541,6 +547,37 @@ def check_by_bins(lines,theta):
     else:
         return 0
 
+def filter_lines_unusual_thetas(lines,theta):
+    thetas = []   #List of thethas of lines
+    for i in range(0, 400, 20):     #Dividing to 20 bins
+        thetas_for_line=[]      #List of thetas for one line
+        for line in lines:
+            _rho, _theta = line[0]      #Gets rho and theta to line
+            x = get_x_by_rho_theta(_rho, _theta, theta)
+            if (x >= i and x <= i + 20):    #If x value is in the bin
+                thetas_for_line.append(_theta)
+        thetas.append(thetas_for_line)
+    min_bin_index_with_lines = 0     #Index for first bin with lines
+    max_bin_index_with_lines = 0     #Index for last bin with lines
+    for i in range(20):
+        if(len(thetas[i])>0):
+            min_bin_index_with_lines = i    #Find the first bin with lines
+            break
+    for i in range(19,-1,-1):
+        if(len(thetas[i])>0):
+            max_bin_index_with_lines = i     #Find the last bin with lines
+            break
+    min_theta_possible = min(thetas[max_bin_index_with_lines])     #minimum theta of all lines
+    max_theta_possible = max(thetas[min_bin_index_with_lines])     #maximum theta of all lines
+    lines_filtered=[]
+    for line in lines:
+        _rho, _theta = line[0]
+        if(_theta<=max_theta_possible and _theta>=min_theta_possible):   #if theta is between minimum and maximum theta
+            lines_filtered.append(line)
+    return np.array(lines_filtered)
+
+
+
 def fill_face_top(image, h_lines, v_lines, face):
     return None
 
@@ -558,7 +595,7 @@ def main(name):
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     #print(kociemba.solve(cube))
     # Actual program
-    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_6.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_14.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
