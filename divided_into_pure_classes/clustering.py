@@ -35,28 +35,31 @@ import bisect
 #              |************|
 # TODO: define constant variables such as frame size, vertical angle, sharp andle, dull angle...
 
+
 def polar_to_cartesian(rho, theta):
     x = rho * np.cos(theta)
     y = rho * np.sin(theta)
     return x, y
 
 
-def find_intersection_point_two_lines(line1, line2, frame_width, frame_height):
+def find_intersection_point_two_lines(line1, line2, frame_width, frame_height) -> (int, int):
     rho1, theta1 = line1
     rho2, theta2 = line2
-    # Convert polar lines to Cartesian coordinates
-    x1, y1 = polar_to_cartesian(rho1, theta1)
-    x2, y2 = polar_to_cartesian(rho2, theta2)
-    # Find intersection point in Cartesian coordinates
-    if np.sin(theta1 - theta2) == 0:
-        return -1, -1  # Lines are parallel
+
+    # Check if lines are parallel
+    if np.isclose(np.sin(theta1 - theta2), 0):
+        return -1, -1  # Lines are parallel, return a sentinel value
+
+    # Calculate intersection point in Cartesian coordinates
     x_intersect = (rho1 * np.cos(theta2) - rho2 * np.cos(theta1)) / np.sin(theta1 - theta2)
     y_intersect = (rho1 * np.sin(theta2) - rho2 * np.sin(theta1)) / np.sin(theta2 - theta1)
+
     # Check if intersection point is within the frame size
     if 0 <= x_intersect <= frame_width and 0 <= y_intersect <= frame_height:
-        return x_intersect, y_intersect
+        # Round to integers and return as a tuple
+        return int(round(y_intersect)), int(round(x_intersect))
     else:
-        return -1, -1
+        return -1, -1  # Intersection point is out of bounds, return a sentinel value
 
 
 def find_intersection_point_neg_slope(line_rho, line_theta, im_size):
