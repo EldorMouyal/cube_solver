@@ -206,7 +206,7 @@ def find_if_rhos_dist_unusual(rhos):
             rho_before = rhos[i]
     return False
 
-def perform_k_means(rhos,rho_theta,):
+def perform_k_means(array,flag,rho_theta):
     """
         This function perform k-means clustering on a set of rhos.
 
@@ -218,14 +218,56 @@ def perform_k_means(rhos,rho_theta,):
         The rhos representing lines chosen by k-means.
 
     """
-    rho_2d = np.array(rhos).reshape(-1, 1)
+    rho_2d = np.array(array).reshape(-1, 1)
     kmeans = KMeans(n_clusters=7)
     kmeans.fit(rho_2d)
     k_means = [item for sublist in kmeans.cluster_centers_ for item in sublist]  # flatten the cluster centers array
     print("k_means ", k_means)
-    return find_closest_rho(rho_theta, k_means)   #Adapting to the lines we have
+    if(flag==1):
+        return find_closest_rho(rho_theta, k_means)  # Adapting to the lines we have
+    else:
+        return find_closest_theta(rho_theta, k_means)
 
-def k_means_for_lines(lines):
+def calculate_avg_theta(lines):
+    avg_theta = 0
+    for rho,theta in lines:
+        avg_theta += theta
+    avg_theta /= len(lines)
+    return avg_theta
+
+def create_rho_theta_for_not_vertical(lines,theta_all):
+    rho_theta = []
+    intersected = []
+    for rho,theta in lines:
+        intersected.append([rho, theta])
+        for _rho, _theta in lines:
+            x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
+            if x != -1 and y != -1:
+                intersected.append([_rho, _theta])
+        if len(intersected)==1:
+            rho_theta.append([rho, theta])
+            intersected.clear()
+        elif len(intersected)>1:
+            closest_line = max(intersected, key=lambda x: x[0])
+            rho_theta.append(closest_line)
+            intersected.clear()
+    return rho_theta
+
+def create_rho_theta_for_vertical(lines,theta_all):
+    rho_theta = []
+    for rho, theta in lines:
+        is_intersect = False
+        # Check that if a line is chosen it does not intersect inside the picture
+        for _rho, _theta in rho_theta:
+            x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
+            if x != -1 and y != -1:
+                is_intersect = True
+                break
+        if not is_intersect:
+            rho_theta.append([rho, theta])
+    return rho_theta
+
+def k_means_for_lines(lines,theta_all):
     """
         This function creates lines that will represent the lines of the cube.
 
@@ -238,19 +280,14 @@ def k_means_for_lines(lines):
     """
     rho_theta = []
     rhos = []
-    thetas=[]
-    for rho, theta in lines:
-        is_intersect = False
-        # Check that if a line is chosen it does not intersect inside the picture
-        for _rho, _theta in rho_theta:
-            x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
-            if x != -1 and y != -1:
-                is_intersect = True
-                break
-        if not is_intersect:
-            rho_theta.append([rho, theta])
-            rhos.append(rho)
-            thetas.append(theta)
+    thetas = []
+    if(theta_all!=0):
+       rho_theta=create_rho_theta_for_not_vertical(lines,np.deg2rad(theta_all))
+    else:
+        rho_theta=create_rho_theta_for_vertical(lines,theta_all)
+    for rho, theta in rho_theta:
+        rhos.append(rho)
+        thetas.append(theta)
     print("rho_theta ",rho_theta)
     rhos.sort()
     thetas.sort()
@@ -262,7 +299,7 @@ def k_means_for_lines(lines):
         unique_thetas = list(filter(lambda x: thetas.count(x) == 1, thetas))
         return find_closest_theta(rho_theta, unique_thetas)   #Adapting to the lines we have
     else:
-        return perform_k_means(rhos,rho_theta)
+        return perform_k_means(rhos,1,rho_theta)
 
 
 def find_closest_rho(rho_theta, arr):
@@ -327,6 +364,13 @@ def distinct_take_lines(lines):  # DOESN'T WORK
     print(most_distinct)
     return most_distinct, avg_thetas
 
+def create_rho_theta(lines):
+    rho_theta = []
+    for line in lines:
+        rho, theta = line[0]
+        rho_theta.append([rho, theta])
+    return rho_theta
+
 def find_grid_for_theta(image, theta: int):
     print(np.deg2rad(theta))
     headline = "Vertical lines"
@@ -345,7 +389,6 @@ def find_grid_for_theta(image, theta: int):
     if(len(after_filter_lines)==0 or len(lines)==0):
         print("Picture not good enough")
         return
-    #lines=decrease_lines_in_loaded_bins(lines,theta)
     if theta == 0:
         lines = filter_vertical_anomalies(lines[:, 0], im_size=image.shape[1])
     elif theta == 60:
@@ -354,9 +397,7 @@ def find_grid_for_theta(image, theta: int):
         lines = filter_obtuse_anomalies(lines[:, 0], image.shape[0])
     draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
     display_image(image, "after filtering")
-    # rhos, avg_theta = k_means_for_lines(lines)
-    # rhos, avg_theta = distinct_take_lines(lines)
-    rho_theta = k_means_for_lines(lines)
+    rho_theta = k_means_for_lines(lines,theta)
     draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
     display_image(image, headline)
     return
@@ -409,13 +450,13 @@ def main(name):
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     #print(kociemba.solve(cube))
     # Actual program
-    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_12.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_1.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
-    find_grid_for_theta(resized_image, theta=0)
+    find_grid_for_theta(resized_image, theta=110)
 
     return
 
