@@ -1,10 +1,11 @@
-
 import kociemba
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 import bisect
+from RubiksCubeFace import RubiksCubeFace
+
 
 # I installed a package called kociemba
 # to solve a rubix cube all we have to do is:
@@ -36,7 +37,7 @@ import bisect
 
 
 def display_image(image, title):
-    cv2.imshow("title", image)
+    cv2.imshow(title, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     return
@@ -55,22 +56,24 @@ def polar_to_cartesian(rho, theta):
     return x, y
 
 
-def find_intersection_point_two_lines(line1, line2, frame_width, frame_height):
+def find_intersection_point_two_lines(line1, line2, frame_width, frame_height) -> (int, int):
     rho1, theta1 = line1
     rho2, theta2 = line2
-    # Convert polar lines to Cartesian coordinates
-    x1, y1 = polar_to_cartesian(rho1, theta1)
-    x2, y2 = polar_to_cartesian(rho2, theta2)
-    # Find intersection point in Cartesian coordinates
-    if np.sin(theta1 - theta2) == 0:
-        return -1, -1  # Lines are parallel
+
+    # Check if lines are parallel
+    if np.isclose(np.sin(theta1 - theta2), 0):
+        return -1, -1  # Lines are parallel, return a sentinel value
+
+    # Calculate intersection point in Cartesian coordinates
     x_intersect = (rho1 * np.cos(theta2) - rho2 * np.cos(theta1)) / np.sin(theta1 - theta2)
     y_intersect = (rho1 * np.sin(theta2) - rho2 * np.sin(theta1)) / np.sin(theta2 - theta1)
+
     # Check if intersection point is within the frame size
     if 0 <= x_intersect <= frame_width and 0 <= y_intersect <= frame_height:
-        return x_intersect, y_intersect
+        # Round to integers and return as a tuple
+        return int(round(y_intersect)), int(round(x_intersect))
     else:
-        return -1, -1
+        return -1, -1  # Intersection point is out of bounds, return a sentinel value
 
 
 def find_intersection_point_neg_slope(line_rho, line_theta, im_size):
@@ -110,7 +113,7 @@ def find_x_given_y(rho, theta, y):
 def filter_vertical_anomalies(rho_theta, im_size):
     n_bins = 20
     # Divide lines into Bins
-    y_value = im_size/2
+    y_value = im_size / 2
     bins = [[] for _ in range(n_bins)]
     for rho, theta in rho_theta:
         x_val = int(find_x_given_y(rho, theta, y_value))
@@ -127,10 +130,10 @@ def filter_vertical_anomalies(rho_theta, im_size):
 def filter_sharp_anomalies(rho_theta, im_size):
     n_bins = 30
     bins = [[] for _ in range(n_bins)]
-    c_length = int(np.sqrt(2 * (im_size**2)))
+    c_length = int(np.sqrt(2 * (im_size ** 2)))
     for rho, theta in rho_theta:
         x, y = polar_to_cartesian(rho, theta)
-        dist_from_TL = int(np.sqrt(x**2 + x**2))  # TL = Top Left
+        dist_from_TL = int(np.sqrt(x ** 2 + x ** 2))  # TL = Top Left
         index = dist_from_TL / (c_length / n_bins)
         if 0 <= index < n_bins:
             bins[int(index)].append([rho, theta])
@@ -142,13 +145,13 @@ def filter_sharp_anomalies(rho_theta, im_size):
 def filter_obtuse_anomalies(rho_theta, im_size):
     n_bins = 30
     bins = [[] for _ in range(n_bins)]
-    c_length = int(np.sqrt(2 * (im_size**2)))
+    c_length = int(np.sqrt(2 * (im_size ** 2)))
     for rho, theta in rho_theta:
         x, y = polar_to_cartesian(rho, theta)
-        x_intersect = (im_size - y + x)/2
+        x_intersect = (im_size - y + x) / 2
         y_intersect = im_size - x_intersect
         if 0 <= x_intersect <= im_size and 0 <= y_intersect <= im_size:
-            dist_from_TR = int(np.sqrt((x_intersect - im_size)**2 + y_intersect**2))
+            dist_from_TR = int(np.sqrt((x_intersect - im_size) ** 2 + y_intersect ** 2))
             index = dist_from_TR / (c_length / n_bins)
             if 0 <= index < n_bins:
                 bins[int(index)].append([rho, theta])
@@ -241,7 +244,8 @@ def find_closest_rho(rho_theta, arr):
             closest_pairs.append(rho_theta[0])
         else:
             # Get the closest pair in rho_theta to y based on the first value in each pair
-            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index-1][0] else rho_theta[index-1]
+            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index - 1][0] else rho_theta[
+                index - 1]
             closest_pairs.append(closest_pair)
     print(closest_pairs)
     return closest_pairs
@@ -283,9 +287,9 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str):
     lines = cv2.HoughLines(edges, rho=2, theta=np.deg2rad(1), threshold=90, min_theta=min_angle, max_theta=max_angle)
     # lines = cv2.HoughLines(edges, 2,  np.pi / 180,  100)
     # Draw the detected lines on the original image
-    draw_lines_by_polar(image, lines[:, 0], thickness=2)
+    # draw_lines_by_polar(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
-    display_image(image, headline)
+    # display_image(image, headline)
     return lines
 
 
@@ -304,14 +308,12 @@ def find_grid_for_theta(image, theta: int):
         lines = filter_sharp_anomalies(lines[:, 0], image.shape[1])
     elif theta == 110:
         lines = filter_obtuse_anomalies(lines[:, 0], image.shape[0])
-    draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
+    # draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
     display_image(image, "after filtering")
     # rhos, avg_theta = k_means_for_lines(lines)
     # rhos, avg_theta = distinct_take_lines(lines)
     rho_theta = k_means_for_lines(lines)
-    draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
-    display_image(image, headline)
-    return
+    return rho_theta
 
 
 def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
@@ -324,24 +326,62 @@ def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
             y0 = (b * rho).item()
             # Extend the line to the image border
             x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
+            y1 = int(y0 + 1000 * a)
             x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
+            y2 = int(y0 - 1000 * a)
             # Draw the line on the image
             cv2.line(image, (x1, y1), (x2, y2), color, thickness)
     return image
 
 
-def fill_face_top(image, h_lines, v_lines, face):
-    return None
+def square_center(point1, point2, point3, point4) -> (int, int):
+    """ this method returns the center of the square created by four points """
+    y_values = [point[0] for point in [point1, point2, point3, point4]]
+    x_values = [point[1] for point in [point1, point2, point3, point4]]
+    center_y = int(sum(y_values) / 4)
+    center_x = int(sum(x_values) / 4)
+    return center_y, center_x
 
 
-def fill_face_right(image, h_lines, v_lines, face):
-    return None
+def get_pixel_color(image, point):
+    # Round the center point coordinates
+    center_y, center_x = map(int, point)
+    color = image[center_y, center_x]
+    return color
 
 
-def fill_face_left(image, h_lines, v_lines, face):
-    return None
+def most_common_color(image, points):
+    points_np = np.array(points, dtype=np.int32)
+    # Determine the bounding box
+    x, y, w, h = cv2.boundingRect(points_np)
+
+    # Extract the region of interest (ROI) from the image
+    roi = image[y:y + h, x:x + w]
+
+    # Convert the ROI to the HSV color space
+    hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+
+    # Compute the histogram of hue values
+    hist = cv2.calcHist([hsv_roi], [0], None, [256], [0, 256])
+
+    # Find the index of the most common hue value
+    hue_index = np.argmax(hist)
+
+    # Convert the hue index to the corresponding color
+    color = np.array([[[hue_index, 255, 255]]], dtype=np.uint8)
+    bgr_color = cv2.cvtColor(color, cv2.COLOR_HSV2BGR)
+
+    return bgr_color[0][0].tolist()
+
+
+def sort_lines_left_to_right(lines):
+    sorted_lines = sorted(lines, key=lambda x: x[1])  # Sort based on the angle (theta)
+    return sorted_lines
+
+
+def sort_lines_top_to_bottom(lines):
+    sorted_lines = sorted(lines, key=lambda x: x[0])
+    return sorted_lines
 
 
 def main(name):
@@ -352,14 +392,41 @@ def main(name):
     image_path = "rubix1.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
-    # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
-    # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
-    # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
-    find_grid_for_theta(resized_image, theta=0)
+    resized_copy = resized_image.copy()
+    vertical = find_grid_for_theta(resized_image, theta=0)
+    sharp = find_grid_for_theta(resized_image, theta=60)
+    obtuse = find_grid_for_theta(resized_image, theta=110)
+    draw_lines_by_polar(image=resized_image, rho_theta=obtuse, color=(255, 0, 0))
+    draw_lines_by_polar(image=resized_image, rho_theta=vertical, color=(255, 0, 0))
+    draw_lines_by_polar(image=resized_image, rho_theta=sharp, color=(255, 0, 0))
+    display_image(resized_image, "cube")
+    obtuse = sort_lines_top_to_bottom(obtuse)
+    sharp = sort_lines_top_to_bottom(sharp)
+    vertical = sort_lines_left_to_right(vertical)
+    # draw_lines_by_polar(image=resized_image, rho_theta=[vertical[0]], thickness=2)
+    # draw_lines_by_polar(image=resized_image, rho_theta=[obtuse[-1]], thickness=2)
+
+    # point1 = find_intersection_point_two_lines(sharp[0], obtuse[0], 400, 400)
+    # point2 = find_intersection_point_two_lines(sharp[0], obtuse[1], 400, 400)
+    # point3 = find_intersection_point_two_lines(sharp[1], obtuse[0], 400, 400)
+    # point4 = find_intersection_point_two_lines(sharp[1], obtuse[1], 400, 400)
+    # point = square_center(point1, point2, point3, point4)
+    # print(point)
+    # print(image[point])
+    # cv2.circle(resized_image, point1, 3, (0, 200, 0), -1)
+    # cv2.circle(resized_image, point2, 3, (0, 200, 0), -1)
+    # cv2.circle(resized_image, point3, 3, (0, 200, 0), -1)
+    # cv2.circle(resized_image, point4, 3, (0, 200, 0), -1)
+    # cv2.circle(resized_image, point, 3, (0, 0, 0), -1)
+    # display_image(resized_image, "cube")
+    # color = most_common_color(resized_copy, [point1, point2, point3, point4])
+    # print(color)
+
+    top_face = RubiksCubeFace(resized_copy, sharp[0:4], obtuse[0:4])
+    top_face.fill_colors_top()
     return
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main('PyCharm')
-
