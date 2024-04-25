@@ -115,7 +115,7 @@ def filter_vertical_anomalies(rho_theta, im_size):
 
 
 def filter_sharp_anomalies(rho_theta, im_size):
-    n_bins = 30
+    n_bins = 80
     bins = [[] for _ in range(n_bins)]
     c_length = int(np.sqrt(2 * (im_size ** 2)))
     for rho, theta in rho_theta:
@@ -289,7 +289,13 @@ def create_rho_theta_for_vertical(lines,theta_all):
             rho_theta.append([rho, theta])       #Taking the line with min rho
     return rho_theta
 
-
+def sides_are_in(rho_theta,side_rho_1,side_rho_2):
+    rho_theta.sort(key=lambda x: x[0])
+    if side_rho_1!=rho_theta[0][0] or side_rho_2!=rho_theta[len(rho_theta)-1][0]:
+        return False
+    else :
+        return True
+        
 def k_means_for_lines(image,lines,theta_all):
     """
         This function creates lines that will represent the lines of the cube.
