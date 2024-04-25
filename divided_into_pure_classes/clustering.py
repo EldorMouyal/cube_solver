@@ -234,82 +234,112 @@ def perform_k_means(array, flag, rho_theta):
     else:
         return find_closest_theta(rho_theta, k_means)
 
+def create_rho_theta_for_not_vertical(lines,theta_all):
+    """
+        This function filters not vertical lines according to their closeness and take the max rho from every filtered line.
 
-def calculate_avg_theta(lines):
-    avg_theta = 0
-    for rho, theta in lines:
-        avg_theta += theta
-    avg_theta /= len(lines)
-    return avg_theta
+        Parameters:
+        lines (array): The lines from the Hough Transform.
+        theta_all : The direction angle of the lines.
 
+        Returns:
+        Array of lines : rhos and thetas.
 
-def create_rho_theta_for_not_vertical(lines, theta_all):
+     """
     rho_theta = []
     intersected = []
-    for rho, theta in lines:
+    for rho,theta in lines:
         intersected.append([rho, theta])
         for _rho, _theta in lines:
+            #Check if 2 lines are intersecting in the image
             x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
             if x != -1 and y != -1:
                 intersected.append([_rho, _theta])
-        if len(intersected) == 1:
+        if len(intersected)==1:     #There are not intersected lines
             rho_theta.append([rho, theta])
             intersected.clear()
-        elif len(intersected) > 1:
-            closest_line = max(intersected, key=lambda x: x[0])
+        elif len(intersected)>1:    #There are intersected lines
+            closest_line = max(intersected, key=lambda x: x[0])       #Taking the line with max rho
             rho_theta.append(closest_line)
             intersected.clear()
     return rho_theta
 
+def create_rho_theta_for_vertical(lines,theta_all):
+    """
+        This function filters vertical lines according to their closeness and take the max rho from every filtered line.
 
-def create_rho_theta_for_vertical(lines, theta_all):
+        Parameters:
+        lines (array): The lines from the Hough Transform.
+        theta_all : The direction angle of the lines.
+
+        Returns:
+        Array of lines : rhos and thetas.
+
+    """
     rho_theta = []
     for rho, theta in lines:
         is_intersect = False
-        # Check that if a line is chosen it does not intersect inside the picture
+        # Check if 2 lines are intersecting in the image
         for _rho, _theta in rho_theta:
             x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
             if x != -1 and y != -1:
                 is_intersect = True
                 break
-        if not is_intersect:
-            rho_theta.append([rho, theta])
+        if not is_intersect:    #There are not intersected lines
+            rho_theta.append([rho, theta])       #Taking the line with min rho
     return rho_theta
 
 
-def k_means_for_lines(lines, theta_all):
+def k_means_for_lines(image,lines,theta_all):
     """
         This function creates lines that will represent the lines of the cube.
 
         Parameters:
-        lines (array): The lines from the Hough Transform..
+        lines (array): The lines from the Hough Transform.
+        theta_all : The direction angle of the lines.
 
         Returns:
         New list of lines representing the lines of the cube.
 
     """
-    rho_theta = []
+    rho_theta=[]
+    rho_theta_b = []
     rhos = []
     thetas = []
-    if theta_all != 0:
-        rho_theta = create_rho_theta_for_not_vertical(lines, np.deg2rad(theta_all))
+    if(theta_all!=0):
+       rho_theta_b=create_rho_theta_for_not_vertical(lines,np.deg2rad(theta_all))
     else:
-        rho_theta = create_rho_theta_for_vertical(lines, theta_all)
+        rho_theta_b=create_rho_theta_for_vertical(lines,np.deg2rad(theta_all))
+    rho_theta_a = []
+    [rho_theta_a.append(x) for x in rho_theta_b if x not in rho_theta_a]
+    rho_theta_a.sort(key=lambda x: x[0])
+    rho_before=rho_theta_a[0][0]
+    rho_theta.append(rho_theta_a[0])
+    for i in range(1,len(rho_theta_a)):
+        rho,theta = rho_theta_a[i]
+        if rho-rho_before>=10:
+            rho_theta.append([rho, theta])
+        rho_before = rho
     for rho, theta in rho_theta:
         rhos.append(rho)
         thetas.append(theta)
     print("rho_theta ", rho_theta)
+    draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(0, 0, 0),thickness=2)
+    display_image(image, "after filtering")
     rhos.sort()
     thetas.sort()
     unique_thetas = list(filter(lambda x: thetas.count(x) == 1, thetas))
-    if len(rho_theta) < 7 or (find_if_rhos_dist_unusual(rhos)):  # Choosing was not possible
+    if (len(rho_theta) < 7 or find_if_rhos_dist_unusual(rhos)==True):   #Choosing was not possible
         print("Picture not good enough")
         return
-    elif len(unique_thetas) == 7:  # We can take lines according thetas
+    elif(len(unique_thetas) == 7):    #We can take lines according thetas
         unique_thetas = list(filter(lambda x: thetas.count(x) == 1, thetas))
-        return find_closest_theta(rho_theta, unique_thetas)  # Adapting to the lines we have
+        return find_closest_theta(rho_theta, unique_thetas)   #Adapting to the lines we have
     else:
-        return perform_k_means(rhos, 1, rho_theta)
+        result=perform_k_means(rhos,rho_theta)
+        if(sides_are_in(result,rhos[0],rhos[len(rhos)-1])==False):
+            result = perform_k_means(rhos, rho_theta)
+        return result
 
 
 def find_closest_rho(rho_theta, arr):
