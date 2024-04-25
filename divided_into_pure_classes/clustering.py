@@ -343,7 +343,7 @@ def k_means_for_lines(image,lines,theta_all):
         return find_closest_theta(rho_theta, unique_thetas)   #Adapting to the lines we have
     else:
         result=perform_k_means(rhos,rho_theta)
-        if(sides_are_in(result,rhos[0],rhos[len(rhos)-1])==False):
+        while(sides_are_in(result,rhos[0],rhos[len(rhos)-1])==False):
             result = perform_k_means(rhos, rho_theta)
         return result
 
