@@ -423,7 +423,7 @@ def main(name):
     # print(color)
 
     top_face = RubiksCubeFace(resized_copy, sharp[0:4], obtuse[0:4])
-    top_face.fill_colors_top()
+    top_face.fill_top()
     return
 
 

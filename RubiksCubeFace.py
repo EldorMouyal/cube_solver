@@ -45,11 +45,11 @@ def most_common_color(image, points) -> [int, int, int]:
     # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
     color_ranges = {
         'red': ([-10, 170, 50], [5, 255, 255]),  # red
-        'orange': ([5, 150, 100], [20, 255, 255]),  # orange
+        'orange': ([5, 150, 100], [15, 255, 255]),  # orange
         'yellow': ([20, 100, 100], [30, 255, 255]),  # yellow
         'green': ([40, 100, 100], [80, 255, 255]),  # green
         'blue': ([90, 100, 100], [130, 255, 255]),  # blue
-        'white': ([0, 0, 200], [180, 50, 255])  # white
+        'white': ([0, 0, 200], [100, 50, 255])  # white
     }
 
     # Initialize counters for each color
@@ -67,13 +67,13 @@ def most_common_color(image, points) -> [int, int, int]:
 
 
 class RubiksCubeFace:
-    def __init__(self, image, lines1, lines2):
+    def __init__(self, image, vertical, horizontal):
         self.image = image
-        self.lines1 = lines1
-        self.lines2 = lines2
+        self.vertical = vertical
+        self.horizontal = horizontal
         self.center_color = ""
         # self.colors = [[[0, 0, 0] for _ in range(3)] for _ in range(3)]
-        self.colors = [["" for _ in range(3)] for _ in range(3)]
+        self.colors = [""] * 9
 
     def __str__(self):
         """
@@ -82,21 +82,27 @@ class RubiksCubeFace:
         # return "".join(["".join(row) for row in self.colors])
         return "Not Implemented yet"
 
-    def fill_colors_top(self):
+    def fill_top(self):
         p1 = None
         p2 = None
         p3 = None
         p4 = None
-
+        # self.horizontal = list(reversed(self.horizontal))
+        self.vertical = list(reversed(self.vertical))
+        color_index = 0
         for i in range(3):
             for j in range(3):
-                p1 = find_intersection_point_two_lines(line1=self.lines1[i], line2=self.lines2[j], frame_height=self.image.shape[0],
+                p1 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
-                p2 = find_intersection_point_two_lines(line1=self.lines1[i], line2=self.lines2[j + 1], frame_height=self.image.shape[0],
+                p2 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
-                p3 = find_intersection_point_two_lines(line1=self.lines1[i + 1], line2=self.lines2[j], frame_height=self.image.shape[0],
+                p3 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
-                p4 = find_intersection_point_two_lines(line1=self.lines1[i + 1], line2=self.lines2[j + 1], frame_height=self.image.shape[0],
+                p4 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
                 p = square_center(p1, p2, p3, p4)
                 cv2.circle(self.image, p1, 3, (0, 0, 0), -1)
@@ -104,12 +110,88 @@ class RubiksCubeFace:
                 cv2.circle(self.image, p3, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p4, 3, (0, 0, 0), -1)
                 color = most_common_color(image=self.image, points=[p1, p2, p3, p4])
+                print(color)
                 cv2.circle(self.image, p, 3, (0, 100, 0), -1)
-                self.colors[j][i] = color
+                self.colors[color_index] = color
+                color_index += 1
                 # print(color[2], color[1], color[0])
-                # print(color)
-        cv2.imshow("dots", self.image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+                cv2.imshow("dots", self.image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
         print(self.colors)
 
+    def fill_left(self):
+        p1 = None
+        p2 = None
+        p3 = None
+        p4 = None
+        # self.horizontal = list(reversed(self.horizontal))
+        self.vertical = list(reversed(self.vertical))
+        color_index = 0
+        for i in range(3):
+            for j in range(3):
+                p1 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p2 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p3 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p4 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p = square_center(p1, p2, p3, p4)
+                cv2.circle(self.image, p1, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p2, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p3, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p4, 3, (0, 0, 0), -1)
+                color = most_common_color(image=self.image, points=[p1, p2, p3, p4])
+                print(color)
+                cv2.circle(self.image, p, 3, (0, 100, 0), -1)
+                self.colors[color_index] = color
+                color_index += 1
+                # print(color[2], color[1], color[0])
+                cv2.imshow("dots", self.image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+        print(self.colors)
+
+    def fill_right(self):
+        p1 = None
+        p2 = None
+        p3 = None
+        p4 = None
+        # self.horizontal = list(reversed(self.horizontal))
+        # self.vertical = list(reversed(self.vertical))
+        color_index = 0
+        for i in range(3):
+            for j in range(3):
+                p1 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p2 = find_intersection_point_two_lines(line1=self.horizontal[i], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p3 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p4 = find_intersection_point_two_lines(line1=self.horizontal[i + 1], line2=self.vertical[j + 1],
+                                                       frame_height=self.image.shape[0],
+                                                       frame_width=self.image.shape[1])
+                p = square_center(p1, p2, p3, p4)
+                cv2.circle(self.image, p1, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p2, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p3, 3, (0, 0, 0), -1)
+                cv2.circle(self.image, p4, 3, (0, 0, 0), -1)
+                color = most_common_color(image=self.image, points=[p1, p2, p3, p4])
+                print(color)
+                cv2.circle(self.image, p, 3, (0, 100, 0), -1)
+                self.colors[color_index] = color
+                color_index += 1
+                # print(color[2], color[1], color[0])
+                cv2.imshow("dots", self.image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+        print(self.colors)
