@@ -1,12 +1,11 @@
-# import kociemba
+
+#import kociemba
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 from detect_lines import *
 import bisect
-from RubiksCubeFace import RubiksCubeFace
-
 
 # I installed a package called kociemba
 # to solve a rubix cube all we have to do is:
@@ -35,7 +34,6 @@ from RubiksCubeFace import RubiksCubeFace
 #              |*D7**D8**D9*|
 #              |************|
 # TODO: define constant variables such as frame size, vertical angle, sharp andle, dull angle...
-
 
 def polar_to_cartesian(rho, theta):
     x = rho * np.cos(theta)
@@ -192,27 +190,7 @@ def filter_closest_pair_to_average_rho(bins):
     return filtered_bins
 
 
-def find_if_rhos_dist_unusual(rhos):
-    """
-        This function checks the distance between near 2 rhos is too far or too close.
-
-        Parameters:
-        rhos (array): Array of rho values.
-
-        Returns:
-        True if the distance between rhos is too far or too close, and False otherwise.
-
-    """
-    rho_before = rhos[0]
-    for i in range(1, len(rhos), 1):
-        if (abs(rhos[i] - rho_before) < 10 or (abs(rhos[i] - rho_before) > 100)) and len(rhos) == 7:  #The condition
-            return True
-        else:
-            rho_before = rhos[i]
-    return False
-
-
-def perform_k_means(array, flag, rho_theta):
+def perform_k_means(array,rho_theta):
     """
         This function perform k-means clustering on a set of rhos.
 
@@ -229,10 +207,7 @@ def perform_k_means(array, flag, rho_theta):
     kmeans.fit(rho_2d)
     k_means = [item for sublist in kmeans.cluster_centers_ for item in sublist]  # flatten the cluster centers array
     print("k_means ", k_means)
-    if flag == 1:
-        return find_closest_rho(rho_theta, k_means)  # Adapting to the lines we have
-    else:
-        return find_closest_theta(rho_theta, k_means)
+    return find_closest_rho(rho_theta, k_means)
 
 def create_rho_theta_for_not_vertical(lines,theta_all):
     """
@@ -259,9 +234,15 @@ def create_rho_theta_for_not_vertical(lines,theta_all):
             rho_theta.append([rho, theta])
             intersected.clear()
         elif len(intersected)>1:    #There are intersected lines
-            closest_line = max(intersected, key=lambda x: x[0])       #Taking the line with max rho
+            closest_line =  max(intersected, key=lambda x: x[0])      #Taking the line with max rho
             rho_theta.append(closest_line)
             intersected.clear()
+    for rho,theta in rho_theta:   #check if line intersect
+        for _rho, _theta in rho_theta:
+            #Check if 2 lines are intersecting in the image
+            x, y = find_intersection_point_two_lines([rho, theta], [_rho, _theta], 400, 400)
+            if x != -1 and y != -1:
+                return create_rho_theta_for_vertical(lines,theta_all)     #If it is, make algorithm for vertical
     return rho_theta
 
 def create_rho_theta_for_vertical(lines,theta_all):
@@ -290,12 +271,94 @@ def create_rho_theta_for_vertical(lines,theta_all):
     return rho_theta
 
 def sides_are_in(rho_theta,side_rho_1,side_rho_2):
+    """
+        This function checks if sides are in rho_theta.
+
+        Parameters:
+        lines (array): The lines from the Hough Transform.
+        theta_all : The direction angle of the lines.
+
+        Returns:
+        True if is and False otherwise.
+
+    """
     rho_theta.sort(key=lambda x: x[0])
     if side_rho_1!=rho_theta[0][0] or side_rho_2!=rho_theta[len(rho_theta)-1][0]:
         return False
     else :
         return True
-        
+
+def remove_duplicates(list):
+    """
+        This function removes duplicates from a list and sorts it.
+
+        Parameters:
+        list (list): A list to remove duplicates and sorts.
+
+        Returns:
+        The list without duplicates and sorted.
+
+    """
+    list_without_duplicates = []
+    [list_without_duplicates.append(x) for x in list if x not in list_without_duplicates]  #remove duplicates
+    list_without_duplicates.sort(key=lambda x: x[0])  #sort the list according rho
+    return list_without_duplicates
+
+def filter_closest_lines(rho_theta,theta_all):
+    """
+        This function filters the list from too close lines.
+
+        Parameters:
+        rho_theta (array): Array of lines.
+        theta_all (float): The direction angle of the lines.
+
+        Returns:
+        The list without too close lines.
+
+    """
+    rho_theta_new=[]
+    rho_theta_new.append(rho_theta[0])
+    for i in range(1,len(rho_theta)):
+        x1=get_x_by_rho_theta(rho_theta[i-1][0], rho_theta[i-1][1],theta_all)
+        x2=get_x_by_rho_theta(rho_theta[i][0], rho_theta[i][1],theta_all)
+        distance=0
+        if(theta_all==0):    #case for theta 0
+            distance=np.sqrt((x2 - x1)**2)
+        elif(theta_all==60):    #case for theta 60
+            distance=np.sqrt((x2 - x1)**2+(x2 - x1)**2)
+        else:     #case for theta 110
+            distance=np.sqrt((x2 - x1)**2+(x1 - x2)**2)
+        if (distance >= 25):     #distance is not too close
+            rho_theta_new.append(rho_theta[i])
+    return rho_theta_new
+
+def get_distance_between_points(r1,r2,t1,t2,theta_all):
+    """
+        This function calculates the distance between two points according the theat_all.
+
+        Parameters:
+        r1 (float): The first rho.
+        r2 (float): The second rho.
+        t1 (float): The first theta.
+        t2 (float): The second theta.
+        theta_all (float): The direction angle of the lines.
+
+        Returns:
+        Distance between two points.
+
+    """
+    x1 = get_x_by_rho_theta(r1, t1, theta_all)
+    x2 = get_x_by_rho_theta(r2, t2, theta_all)
+    distance = 0
+    if (theta_all == 0):     #case for theta 0
+        distance = np.sqrt((x2 - x1) ** 2)
+    elif (theta_all == 60):       #case for theta 60
+        distance = np.sqrt((x2 - x1) ** 2 + (x2 - x1) ** 2)
+    else:            #case for theta 110
+        distance = np.sqrt((x2 - x1) ** 2 + (x1 - x2) ** 2)
+    return distance
+
+
 def k_means_for_lines(image,lines,theta_all):
     """
         This function creates lines that will represent the lines of the cube.
@@ -309,33 +372,32 @@ def k_means_for_lines(image,lines,theta_all):
 
     """
     rho_theta=[]
-    rho_theta_b = []
     rhos = []
     thetas = []
-    if(theta_all!=0):
-       rho_theta_b=create_rho_theta_for_not_vertical(lines,np.deg2rad(theta_all))
-    else:
-        rho_theta_b=create_rho_theta_for_vertical(lines,np.deg2rad(theta_all))
-    rho_theta_a = []
-    [rho_theta_a.append(x) for x in rho_theta_b if x not in rho_theta_a]
-    rho_theta_a.sort(key=lambda x: x[0])
-    rho_before=rho_theta_a[0][0]
-    rho_theta.append(rho_theta_a[0])
-    for i in range(1,len(rho_theta_a)):
-        rho,theta = rho_theta_a[i]
-        if rho-rho_before>=10:
-            rho_theta.append([rho, theta])
-        rho_before = rho
+    if(theta_all!=0):       #case of theta=60 or theta=110
+       rho_theta=create_rho_theta_for_not_vertical(lines,np.deg2rad(theta_all))
+    else:         #case of theta=0
+        rho_theta=create_rho_theta_for_vertical(lines,np.deg2rad(theta_all))
+    rho_theta=remove_duplicates(rho_theta)
+    rho_theta=filter_closest_lines(rho_theta,theta_all)
+    #If the side line is not in rho_theta or there is line close enough to side line already
+    if(lines[0] not in rho_theta and get_distance_between_points(rho_theta[0][0],lines[0][0],rho_theta[0][1],lines[0][1],theta_all)>5):
+        rho_theta.append(lines[0])
+    if (lines[len(lines)-1] not in rho_theta and
+            get_distance_between_points(rho_theta[len(rho_theta)-1][0],lines[len(lines)-1][0],rho_theta[len(rho_theta)-1][1],lines[len(lines)-1][1],theta_all)>5):
+        rho_theta.append(lines[len(lines)-1])
     for rho, theta in rho_theta:
         rhos.append(rho)
         thetas.append(theta)
+
     print("rho_theta ", rho_theta)
     draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(0, 0, 0),thickness=2)
     display_image(image, "after filtering")
+
     rhos.sort()
     thetas.sort()
     unique_thetas = list(filter(lambda x: thetas.count(x) == 1, thetas))
-    if (len(rho_theta) < 7 or find_if_rhos_dist_unusual(rhos)==True):   #Choosing was not possible
+    if (len(rho_theta) < 7):   #Choosing was not possible
         print("Picture not good enough")
         return
     elif(len(unique_thetas) == 7):    #We can take lines according thetas
@@ -343,10 +405,9 @@ def k_means_for_lines(image,lines,theta_all):
         return find_closest_theta(rho_theta, unique_thetas)   #Adapting to the lines we have
     else:
         result=perform_k_means(rhos,rho_theta)
-        while(sides_are_in(result,rhos[0],rhos[len(rhos)-1])==False):
+        while(sides_are_in(result,rhos[0],rhos[len(rhos)-1])==False):    #Sides must be chosen
             result = perform_k_means(rhos, rho_theta)
         return result
-
 
 def find_closest_rho(rho_theta, arr):
     rho_theta.sort(key=lambda x: x[0])  # Sort the larger array based on the first values
@@ -362,12 +423,10 @@ def find_closest_rho(rho_theta, arr):
             closest_pairs.append(rho_theta[0])
         else:
             # Get the closest pair in rho_theta to y based on the first value in each pair
-            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index - 1][0] else rho_theta[
-                index - 1]
+            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index-1][0] else rho_theta[index-1]
             closest_pairs.append(closest_pair)
-    print("Closest_pairs ", closest_pairs)
+    print("Closest_pairs ",closest_pairs)
     return closest_pairs
-
 
 def find_closest_theta(rho_theta, arr):
     rho_theta.sort(key=lambda x: x[1])  # Sort the larger array based on the first values
@@ -383,10 +442,9 @@ def find_closest_theta(rho_theta, arr):
             closest_pairs.append(rho_theta[0])
         else:
             # Get the closest pair in rho_theta to y based on the first value in each pair
-            closest_pair = rho_theta[index] if rho_theta[index][1] - y < y - rho_theta[index - 1][1] else rho_theta[
-                index - 1]
+            closest_pair = rho_theta[index] if rho_theta[index][1] - y < y - rho_theta[index-1][1] else rho_theta[index-1]
             closest_pairs.append(closest_pair)
-    print("Closest_pairs ", closest_pairs)
+    print("Closest_pairs ",closest_pairs)
     return closest_pairs
 
 
@@ -413,15 +471,6 @@ def distinct_take_lines(lines):  # DOESN'T WORK
     print(most_distinct)
     return most_distinct, avg_thetas
 
-
-def create_rho_theta(lines):
-    rho_theta = []
-    for line in lines:
-        rho, theta = line[0]
-        rho_theta.append([rho, theta])
-    return rho_theta
-
-
 def find_grid_for_theta(image, theta: int):
     print(np.deg2rad(theta))
     headline = "Vertical lines"
@@ -429,16 +478,15 @@ def find_grid_for_theta(image, theta: int):
         headline = "Sharp theta"
     if theta == 110:
         headline = "Obtuse theta"
-    thresholds = get_hough_params(image, theta)
-    edges = display_canny(image, thresholds[1])
-    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,
-                                  hough_threshold=thresholds[0])
-    # print("lines before filter ",len(lines))
-    after_filter_lines = filter_lines_unusual_thetas(lines, theta)
-    # print("lines after filter ",len(after_filter_lines))
-    if len(after_filter_lines) - len(lines) != 0:
-        lines = after_filter_lines
-    if len(after_filter_lines) == 0 or len(lines) == 0:
+    thresholds=get_hough_params(image, theta)
+    edges = display_canny(image,thresholds[1])
+    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,hough_threshold=thresholds[0])
+    #print("lines before filter ",len(lines))
+    after_filter_lines=filter_lines_unusual_thetas(lines,theta)
+    #print("lines after filter ",len(after_filter_lines))
+    if(len(after_filter_lines)-len(lines)!=0):
+        lines=after_filter_lines
+    if(len(after_filter_lines)==0 or len(lines)==0):
         print("Picture not good enough")
         return
     if theta == 0:
@@ -447,44 +495,12 @@ def find_grid_for_theta(image, theta: int):
         lines = filter_sharp_anomalies(lines[:, 0], image.shape[1])
     elif theta == 110:
         lines = filter_obtuse_anomalies(lines[:, 0], image.shape[0])
-    # draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
-    # display_image(image, "after filtering")
-    rho_theta = k_means_for_lines(lines, theta)
-    # draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
-    # display_image(image, headline)
-    return rho_theta
-
-
-def decrease_lines_in_loaded_bins(lines, theta):  # Not Used Yet
-    bins = []  # List of lines and thetas
-    for i in range(0, 400, 20):  # Dividing to 20 bins
-        lines_bin = []  # List of thetas for one line
-        for line in lines:
-            _rho, _theta = line[0]  # Gets rho and theta to line
-            x = get_x_by_rho_theta(_rho, _theta, theta)
-            if i <= x <= i + 20:  # If x value is in the bin
-                lines_bin.append((line, _theta))
-        bins.append(lines_bin)
-    lines_filtered = []
-    average_thetas = 0
-    for bin in bins:
-        if len(bin) <= 5:
-            for line_theta in bin:
-                lines_filtered.append(line_theta[0])
-        else:
-            average_thetas = sum(theta for _, theta in bin) / len(bin)
-            close_to_avg_theta = closest_lines_to_theta(average_thetas, bin)
-            for line_theta in close_to_avg_theta:
-                lines_filtered.append(line_theta[0])
-    return np.array(lines_filtered)
-
-
-def closest_lines_to_theta(_theta, lines):  # Not Used Yet
-    differences = [(abs(theta - _theta), (line, theta)) for line, theta in lines]
-    differences.sort(key=lambda x: x[0])
-    closest_tuples = [item for _, item in differences[:3]]
-    return closest_tuples
-
+    draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
+    display_image(image, "after filtering")
+    rho_theta = k_means_for_lines(image,lines,theta)
+    draw_lines_by_polar(image=image, rho_theta=rho_theta, color=(255, 0, 0), thickness=2)
+    display_image(image, headline)
+    return
 
 def sort_lines_left_to_right(lines):
     sorted_lines = sorted(lines, key=lambda x: x[1])  # Sort based on the angle (theta)
@@ -499,30 +515,24 @@ def sort_lines_top_to_bottom(lines):
 def main(name):
     # Example string and solution for a cube:
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
-    # print(kociemba.solve(cube))
+    #print(kociemba.solve(cube))
     # Actual program
-    image_path = "../images_cubes/cube_2.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_22.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
-    vertical = find_grid_for_theta(resized_image, theta=0)
-    sharp = find_grid_for_theta(resized_image, theta=60)
-    obtuse = find_grid_for_theta(resized_image, theta=110)
-    draw_lines_by_polar(image=resized_image, rho_theta=obtuse, color=(255, 0, 0))
-    draw_lines_by_polar(image=resized_image, rho_theta=vertical, color=(255, 0, 0))
-    draw_lines_by_polar(image=resized_image, rho_theta=sharp, color=(255, 0, 0))
-    display_image(resized_image, "cube")
-    obtuse = sort_lines_top_to_bottom(obtuse)
-    sharp = sort_lines_top_to_bottom(sharp)
-    vertical = sort_lines_left_to_right(vertical)
-    # top_face = RubiksCubeFace(resized_image.copy(), vertical=obtuse[0:4], horizontal=sharp[0:4])
-    # top_face.fill_top()
-    # left_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[0:4], horizontal=obtuse[3:7])
-    # left_face.fill_left()
-    right_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[3:7], horizontal=sharp[3:7])
-    right_face.fill_right()
+    # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
+    # lines = hough_lines_for_theta(image=image, edges=edges, theta=120, headline="Obtuse Angle Lines")
+    # lines = hough_lines_for_theta(image=image, edges=edges, theta=0, headline="Vertical Lines")
+    find_grid_for_theta(resized_image, theta=60)
+
+
+    #print(get_hough_params(resized_image,0))
+    #edges = display_canny(resized_image,50)
+    #lines = hough_lines_for_theta(image=resized_image, edges=edges, theta=60, headline="Vertical Lines",hough_threshold=115)
     return
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main('PyCharm')
+
