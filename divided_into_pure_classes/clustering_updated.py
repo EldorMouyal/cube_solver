@@ -320,7 +320,7 @@ def filter_lines_distance(rho_theta,theta_all):
         t1=rho_theta[i][1]
         t2=rho_theta[i+1][1]
         distance=get_distance_between_points(r1,r2,t1,t2,theta_all)
-        if ((theta_all==0 and distance >= 35) or (theta_all!=0 and distance >= 20)):     #distance is not too close
+        if ((theta_all==0 and distance >= 30) or (theta_all!=0 and distance >= 20)):     #distance is not too close
             rho_theta_new.append(rho_theta[i])
             rho_theta_new.append(rho_theta[i+1])
     rho_theta_new.append(rho_theta[len(rho_theta) - 1])
@@ -328,9 +328,9 @@ def filter_lines_distance(rho_theta,theta_all):
     if (len(rho_theta_new)==7):
         return rho_theta_new
     else:
-        return filter_closest_lines(rho_theta_new,theta_all)
+        return filter_closest_lines(rho_theta_new,theta_all,30,15)
 
-def filter_closest_lines(rho_theta,theta_all):
+def filter_closest_lines(rho_theta,theta_all,dist_to_zero,dist_to_not_zero):
     rho_theta_new = []
     rho_theta_new.append(rho_theta[0])
     for i in range(1, len(rho_theta)):
@@ -339,7 +339,9 @@ def filter_closest_lines(rho_theta,theta_all):
         t1 = rho_theta[i-1][1]
         t2 = rho_theta[i][1]
         distance = get_distance_between_points(r1, r2, t1, t2, theta_all)
-        if (distance >= 22):  # distance is not too close
+        if theta_all == 0 and distance >= dist_to_zero:
+            rho_theta_new.append(rho_theta[i])
+        if theta_all!=0 and distance >= dist_to_not_zero:  # distance is not too close
             rho_theta_new.append(rho_theta[i])
     return rho_theta_new
 
@@ -399,6 +401,46 @@ def create_rho_theta(lines,theta_all):
     rho_theta = filter_lines_distance(rho_theta, theta_all)
     return rho_theta
 
+def remove_min_dist_line(rho_theta,theta_all):
+    distances=[]
+    for i in range(0,len(rho_theta)-1):
+        r1=rho_theta[i][0]
+        r2=rho_theta[i+1][0]
+        t1=rho_theta[i][1]
+        t2=rho_theta[i+1][1]
+        distance=get_distance_between_points(r1,r2,t1,t2,theta_all)
+        distances.append(distance)
+    min_dist=min(distances)
+    for i in range(0,len(rho_theta)-1):
+        r1=rho_theta[i][0]
+        r2=rho_theta[i+1][0]
+        t1=rho_theta[i][1]
+        t2=rho_theta[i+1][1]
+        distance=get_distance_between_points(r1,r2,t1,t2,theta_all)
+        if (distance==min_dist):
+            rho_theta.remove(rho_theta[i+1])
+            return rho_theta
+    return rho_theta
+
+def check_dist_small(lines,rho_theta,theta_all,flag):
+    if (flag == 0):
+        r1 = rho_theta[0][0]
+        r2 = lines[0][0]
+        t1 = rho_theta[0][1]
+        t2 = lines[0][1]
+        distance = get_distance_between_points(r1, r2, t1, t2, theta_all)
+        if (distance <=6):
+            return True
+    if (flag == 1):
+        r1 = rho_theta[len(rho_theta) - 1][0]
+        r2 = lines[len(lines) - 1][0]
+        t1 = rho_theta[len(rho_theta) - 1][1]
+        t2 = lines[len(lines) - 1][1]
+        distance = get_distance_between_points(r1, r2, t1, t2, theta_all)
+        if (distance <=6):
+            return True
+    return False
+
 
 def k_means_for_lines(image,lines,theta_all):
     """
@@ -423,12 +465,31 @@ def k_means_for_lines(image,lines,theta_all):
         rho_theta = create_rho_theta(lines, theta_all)
     if(theta_all==0 and check_dist_too_far(rho_theta_1,theta_all)==False):
         rho_theta=rho_theta_1
-    #If the side line is not in rho_theta or there is line close enough to side line already
-    if(lines[0] not in rho_theta and get_distance_between_points(rho_theta[0][0],lines[0][0],rho_theta[0][1],lines[0][1],theta_all)>5):
+    a=35
+    b=20
+    while(len(rho_theta)>7):
+        rho_theta=filter_closest_lines(rho_theta,theta_all,a,b)
+        a=a+1
+        b=b+1
+    if (len(rho_theta)<7 and lines[0] not in rho_theta and check_dist_small(lines,rho_theta,theta_all,0)==False):
         rho_theta.append(lines[0])
-    if (lines[len(lines)-1] not in rho_theta and
-            get_distance_between_points(rho_theta[len(rho_theta)-1][0],lines[len(lines)-1][0],rho_theta[len(rho_theta)-1][1],lines[len(lines)-1][1],theta_all)>5):
-        rho_theta.append(lines[len(lines)-1])
+    elif (len(rho_theta)<7 and lines[len(lines) - 1] not in rho_theta and check_dist_small(lines,rho_theta,theta_all,1)==False):
+        rho_theta.append(lines[len(lines) - 1])
+    elif (len(rho_theta)==7 and ((lines[len(lines) - 1] not in rho_theta) and check_dist_small(lines,rho_theta,theta_all,1)==False)):
+        rho_theta=remove_min_dist_line(rho_theta,theta_all)
+        rho_theta.append(lines[len(lines) - 1])
+    elif (len(rho_theta)==7 and ((lines[0] not in rho_theta) and check_dist_small(lines,rho_theta,theta_all,0)==False)):
+        rho_theta=remove_min_dist_line(rho_theta,theta_all)
+        rho_theta.append(lines[0])
+
+
+    #If the side line is not in rho_theta or there is line close enough to side line already
+   # if(lines[0] not in rho_theta and get_distance_between_points(rho_theta[0][0],lines[0][0],rho_theta[0][1],lines[0][1],theta_all)>5):
+   #     rho_theta.append(lines[0])
+   # if (lines[len(lines)-1] not in rho_theta and
+   #         get_distance_between_points(rho_theta[len(rho_theta)-1][0],lines[len(lines)-1][0],rho_theta[len(rho_theta)-1][1],lines[len(lines)-1][1],theta_all)>5):
+   #     rho_theta.append(lines[len(lines)-1])
+
     for rho, theta in rho_theta:
         rhos.append(rho)
         thetas.append(theta)
@@ -557,7 +618,7 @@ def main(name):
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     #print(kociemba.solve(cube))
     # Actual program
-    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_14.jpg"
+    image_path = "C:\\Users\\alex\\PycharmProjects\\pythonProject\\.venv\\cube_13.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     # lines = hough_lines_for_theta(image=image, edges=edges, theta=60, headline="Sharp Angle Lines")
