@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import bisect
 
-DISPLAY = True
+DISPLAY = False
 
 
 def display_image(image, title):
@@ -38,7 +38,7 @@ def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
 def display_canny(image, low_threshold=50):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-    #display_image(edges, "Canny edges")
+    display_image(edges, "Canny edges")
     return edges
 
 

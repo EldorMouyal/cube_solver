@@ -495,12 +495,12 @@ def find_grid_for_theta(image, theta: int):
     return rho_theta
 
 
-def sort_lines_left_to_right(lines):
+def sort_lines_by_theta(lines):
     sorted_lines = sorted(lines, key=lambda x: x[1])  # Sort based on the angle (theta)
     return sorted_lines
 
 
-def sort_lines_top_to_bottom(lines):
+def sort_lines_top_by_rho(lines):
     sorted_lines = sorted(lines, key=lambda x: x[0])
     return sorted_lines
 
@@ -510,7 +510,7 @@ def main(name):
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     # print(kociemba.solve(cube))
     # Actual program
-    image_path = "../final_cube_top.jpg"
+    image_path = "../final_cube_bottom.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     resized_copy = resized_image.copy()
@@ -521,9 +521,13 @@ def main(name):
     draw_lines_by_polar(image=resized_image, rho_theta=vertical, color=(255, 0, 0))
     draw_lines_by_polar(image=resized_image, rho_theta=sharp, color=(255, 0, 0))
     display_image(resized_image, "cube")
-    obtuse = sort_lines_top_to_bottom(obtuse)
-    sharp = sort_lines_top_to_bottom(sharp)
-    vertical = sort_lines_left_to_right(vertical)
+    obtuse = sort_lines_top_by_rho(obtuse)
+    sharp = sort_lines_top_by_rho(sharp)
+    vertical = sort_lines_top_by_rho(vertical)
+    # for v in vertical:
+    #     draw_lines_by_polar(resized_image, [v], color=(0, 255, 0))
+    #     display_image(image=resized_image, title="sorted")
+
     top_face = RubiksCubeFace(resized_copy.copy(), vertical=obtuse[0:4], horizontal=sharp[0:4])
     top_face.fill_top()
     left_face = RubiksCubeFace(resized_copy, vertical=vertical[0:4], horizontal=obtuse[3:7])

@@ -46,11 +46,11 @@ def most_common_color(image, points):
     color_ranges = {
         'red': ([0, 240, 175], [4, 255, 255]),  # red
         'red2': ([175, 240, 190], [180, 255, 255]),
-        'orange': ([6, 150, 150], [18, 255, 255]),  # orange
+        'orange': ([6, 150, 150], [20, 255, 255]),  # orange
         'yellow': ([20, 150, 150], [38, 255, 255]),  # yellow
-        'green': ([40, 100, 150], [68, 255, 255]),  # green
+        'green': ([40, 100, 120], [75, 255, 255]),  # green
         'blue': ([85, 100, 150], [130, 255, 255]),  # blue
-        'white': ([20, 0, 216], [100, 50, 255])  # white
+        'white': ([0, 0, 200], [100, 50, 255])  # white
     }
 
     # Initialize counters for each color
