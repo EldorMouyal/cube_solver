@@ -517,10 +517,10 @@ def main(name):
     vertical = find_grid_for_theta(resized_image.copy(), theta=0)
     sharp = find_grid_for_theta(resized_image.copy(), theta=60)
     obtuse = find_grid_for_theta(resized_image.copy(), theta=110)
-    draw_lines_by_polar(image=resized_image, rho_theta=obtuse, color=(255, 0, 0))
-    draw_lines_by_polar(image=resized_image, rho_theta=vertical, color=(255, 0, 0))
-    draw_lines_by_polar(image=resized_image, rho_theta=sharp, color=(255, 0, 0))
-    display_image(resized_image, "cube")
+    draw_lines_by_polar(image=resized_copy, rho_theta=obtuse, color=(255, 0, 0))
+    draw_lines_by_polar(image=resized_copy, rho_theta=vertical, color=(255, 0, 0))
+    draw_lines_by_polar(image=resized_copy, rho_theta=sharp, color=(255, 0, 0))
+    display_image(resized_copy, "cube")
     obtuse = sort_lines_top_by_rho(obtuse)
     sharp = sort_lines_top_by_rho(sharp)
     vertical = sort_lines_top_by_rho(vertical)
@@ -528,12 +528,12 @@ def main(name):
     #     draw_lines_by_polar(resized_image, [v], color=(0, 255, 0))
     #     display_image(image=resized_image, title="sorted")
 
-    top_face = RubiksCubeFace(resized_copy.copy(), vertical=obtuse[0:4], horizontal=sharp[0:4])
-    top_face.fill_top()
-    left_face = RubiksCubeFace(resized_copy, vertical=vertical[0:4], horizontal=obtuse[3:7])
-    left_face.fill_left()
-    # right_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[3:7], horizontal=sharp[3:7])
-    # right_face.fill_right()
+    top_face = RubiksCubeFace(resized_image.copy(), vertical=obtuse[0:4], horizontal=sharp[0:4])
+    # top_face.fill_face("top")
+    left_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[0:4], horizontal=obtuse[3:7])
+    # left_face.fill_face()
+    right_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[3:7], horizontal=sharp[3:7])
+    right_face.fill_face()
     return
 
 
