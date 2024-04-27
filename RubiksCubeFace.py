@@ -4,13 +4,13 @@ import cv2
 
 # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
 color_ranges = {
-    'red': ([0, 200, 175], [5, 255, 255]),  # red
-    'red2': ([170, 150, 255], [180, 255, 255]),
-    'orange': ([4, 100, 150], [20, 255, 255]),  # orange
+    'red': ([0, 100, 150], [2, 255, 255]),  # red
+    'red2': ([160, 100, 100], [180, 255, 255]),
+    'orange': ([4, 100, 100], [20, 255, 255]),  # orange
     'yellow': ([20, 150, 150], [38, 255, 255]),  # yellow
-    'green': ([40, 150, 120], [75, 255, 255]),  # green
-    'blue': ([75, 100, 150], [130, 255, 255]),  # blue
-    'white': ([20, 0, 200], [100, 50, 255])  # white
+    'green': ([40, 100, 100], [80, 255, 255]),  # green
+    'blue': ([95, 100, 100], [130, 255, 255]),  # blue
+    'white': ([20, 0, 150], [180, 50, 255])  # white
 }
 
 
@@ -67,10 +67,10 @@ def most_common_color(image, points):
     for color_name, (lower, upper) in color_ranges.items():
         mask = cv2.inRange(hsv_roi, np.array(lower), np.array(upper))
         color_counts[color_name] = cv2.countNonZero(mask)
-
+        print(color_name, color_counts[color_name])
+    color_counts["red"] += color_counts["red2"]
     # Get the color with the maximum count
     most_common = max(color_counts, key=color_counts.get)
-
     return most_common
 
 
@@ -94,11 +94,12 @@ def get_color(r, g, b):  # compare rgb values and return color
 def most_common_color2(image, points):
     roi = get_ROI(image, points)
     b, g, r = cv2.split(roi)
-    r_avg = int(cv2.mean(r)[0])
-    g_avg = int(cv2.mean(g)[0])
-    b_avg = int(cv2.mean(b)[0])
+    r_avg = cv2.mean(r)[0]
+    g_avg = cv2.mean(g)[0]
+    b_avg = cv2.mean(b)[0]
     print(r_avg, g_avg, b_avg)
     res = get_color(r_avg, g_avg, b_avg)
+    print(res)
     return res
 
 
@@ -118,7 +119,7 @@ class RubiksCubeFace:
         # return "".join(["".join(row) for row in self.colors])
         return "Not Implemented yet"
 
-    def fill_side(self, side="side"):
+    def fill_face(self, side="side"):
         p1 = None
         p2 = None
         p3 = None
@@ -142,20 +143,18 @@ class RubiksCubeFace:
                                                        frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
                 p = square_center(p1, p2, p3, p4)
-                print(p1, p2, p3, p4)
                 cv2.circle(self.image, p1, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p2, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p3, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p4, 3, (0, 0, 0), -1)
+                # color = most_common_color(image=self.image, points=[p1, p2, p3, p4])
                 color = most_common_color(image=self.image, points=[p1, p2, p3, p4])
-                print(color)
+                print("the most dominant color is: ", color, "\n")
                 cv2.circle(self.image, p, 3, (0, 100, 0), -1)
                 self.colors[color_index] = color
                 color_index += 1
-                # print(color[2], color[1], color[0])
                 cv2.imshow("dots", self.image)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
         print(self.colors)
-
 
