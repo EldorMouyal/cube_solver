@@ -46,7 +46,7 @@ def display_image(image, title):
 def display_canny(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-    display_image(edges, "Canny edges")
+    # display_image(edges, "Canny edges")
     return edges
 
 
@@ -309,7 +309,7 @@ def find_grid_for_theta(image, theta: int):
     elif theta == 110:
         lines = filter_obtuse_anomalies(lines[:, 0], image.shape[0])
     # draw_lines_by_polar(image=image, rho_theta=lines, color=(0, 255, 0))
-    display_image(image, "after filtering")
+    # display_image(image, "after filtering")
     # rhos, avg_theta = k_means_for_lines(lines)
     # rhos, avg_theta = distinct_take_lines(lines)
     rho_theta = k_means_for_lines(lines)
@@ -389,7 +389,7 @@ def main(name):
     cube = 'DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD'
     print(kociemba.solve(cube))
     # Actual program
-    image_path = "rubix1.jpg"
+    image_path = "rubix2.jpg"
     image = cv2.imread(image_path)
     resized_image = cv2.resize(image, (400, 400))
     resized_copy = resized_image.copy()
@@ -422,8 +422,12 @@ def main(name):
     # color = most_common_color(resized_copy, [point1, point2, point3, point4])
     # print(color)
 
-    top_face = RubiksCubeFace(resized_copy, sharp[0:4], obtuse[0:4])
-    top_face.fill_top()
+    # top_face = RubiksCubeFace(resized_image.copy(), vertical=obtuse[0:4], horizontal=sharp[0:4])
+    # top_face.fill_top()
+    left_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[0:4], horizontal=obtuse[3:7])
+    left_face.fill_left()
+    # right_face = RubiksCubeFace(resized_image.copy(), vertical=vertical[3:7], horizontal=sharp[3:7])
+    # right_face.fill_right()
     return
 
 

@@ -31,25 +31,26 @@ def find_intersection_point_two_lines(line1, line2, frame_width, frame_height) -
         return -1, -1  # Intersection point is out of bounds, return a sentinel value
 
 
-def most_common_color(image, points) -> [int, int, int]:
+def most_common_color(image, points):
     points_np = np.array(points, dtype=np.int32)
-    # Determine the bounding box
-    x, y, w, h = cv2.boundingRect(points_np)
-
-    # Extract the region of interest (ROI) from the image
-    roi = image[y:y + h, x:x + w]
-
+    # Extract the ROI by creating an empty image and filling only the polygon created by the points with white.
+    mask = np.zeros_like(image[:, :, 0])
+    pts = points_np.reshape((-1, 1, 2))
+    cv2.fillPoly(mask, [pts], (255, 255, 255))
+    roi = cv2.bitwise_and(image, image, mask=mask)
+    cv2.imshow("roi", roi)
     # Convert the ROI to the HSV color space
     hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
     # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
     color_ranges = {
-        'red': ([-10, 170, 50], [5, 255, 255]),  # red
-        'orange': ([5, 150, 100], [15, 255, 255]),  # orange
-        'yellow': ([20, 100, 100], [30, 255, 255]),  # yellow
-        'green': ([40, 100, 100], [80, 255, 255]),  # green
-        'blue': ([90, 100, 100], [130, 255, 255]),  # blue
-        'white': ([0, 0, 200], [100, 50, 255])  # white
+        'red': ([0, 240, 175], [4, 255, 255]),  # red
+        'red2': ([175, 240, 190], [180, 255, 255]),
+        'orange': ([6, 150, 150], [18, 255, 255]),  # orange
+        'yellow': ([20, 150, 150], [38, 255, 255]),  # yellow
+        'green': ([40, 100, 150], [68, 255, 255]),  # green
+        'blue': ([85, 100, 150], [130, 255, 255]),  # blue
+        'white': ([20, 0, 216], [100, 50, 255])  # white
     }
 
     # Initialize counters for each color
@@ -64,6 +65,39 @@ def most_common_color(image, points) -> [int, int, int]:
     most_common = max(color_counts, key=color_counts.get)
 
     return most_common
+
+
+def get_color(r, g, b):  # compare rgb values and return color
+    if (118 <= r <= 230) and (60 <= g <= 174) and (15 < b < 130):
+        return 'blue'
+    elif (148 <= r <= 250) and (140 <= g < 250) and (140 <= b < 250):
+        return 'white'
+    elif (21 <= r <= 118) and (130 < g < 255) and (150 < b < 255):
+        return 'yellow'
+    elif (0 < r <= 75) and (79 <= g <= 130) and (125 < b < 255):
+        return 'orange'
+    elif (10 <= r <= 70) and (20 <= g < 79) and (90 <= b < 255):
+        return 'red'
+    elif (40 <= r <= 116) and (130 < g <= 235) and (80 < b <= 170):
+        return 'green'
+    else:
+        pass
+
+
+def most_common_color2(image, points):
+    points_np = np.array(points, dtype=np.int32)
+    # Determine the bounding box
+    x, y, w, h = cv2.boundingRect(points_np)
+
+    # Extract the region of interest (ROI) from the image
+    roi = image[y:y + h, x:x + w]
+    b, g, r = cv2.split(roi)
+    r_avg = int(cv2.mean(r)[0])
+    g_avg = int(cv2.mean(g)[0])
+    b_avg = int(cv2.mean(b)[0])
+    print(r_avg, g_avg, b_avg)
+    res = get_color(r_avg, g_avg, b_avg)
+    return res
 
 
 class RubiksCubeFace:
@@ -105,6 +139,7 @@ class RubiksCubeFace:
                                                        frame_height=self.image.shape[0],
                                                        frame_width=self.image.shape[1])
                 p = square_center(p1, p2, p3, p4)
+                print(p1, p2, p3, p4)
                 cv2.circle(self.image, p1, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p2, 3, (0, 0, 0), -1)
                 cv2.circle(self.image, p3, 3, (0, 0, 0), -1)
@@ -126,7 +161,7 @@ class RubiksCubeFace:
         p3 = None
         p4 = None
         # self.horizontal = list(reversed(self.horizontal))
-        self.vertical = list(reversed(self.vertical))
+        # self.vertical = list(reversed(self.vertical))
         color_index = 0
         for i in range(3):
             for j in range(3):
