@@ -27,9 +27,9 @@ def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
             y0 = (b * rho).item()
             # Extend the line to the image border
             x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
+            y1 = int(y0 + 1000 * a)
             x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
+            y2 = int(y0 - 1000 * a)
             # Draw the line on the image
             cv2.line(image, (x1, y1), (x2, y2), color, thickness)
     return image
@@ -75,17 +75,17 @@ def check_threshold_if_load_lines(lines, theta):
 
     """
     bins_size = []
-    for i in range(0, 400, 20):  #Dividing to 20 bins
+    for i in range(0, 400, 20):  # Dividing to 20 bins
         rhos = []
         for line in lines:
-            _rho, _theta = line[0]  #Gets rho and theta to line
+            _rho, _theta = line[0]  # Gets rho and theta to line
             x = get_x_by_rho_theta(_rho, _theta, theta)
-            if (x >= i and x <= i + 20):  #If x value is in the bin
+            if i <= x <= i + 20:  # If x value is in the bin
                 rhos.append(_rho)
         bins_size.append(len(rhos))
     check = False
     for i in range(0, len(bins_size) - 1, 1):
-        if (bins_size[i] > 20):  #If there are too much lines in one bin
+        if bins_size[i] > 20:  # If there are too much lines in one bin
             check = True
             break
     return check
@@ -108,12 +108,12 @@ def fix_threshold_if_load_lines(image, theta, hough_params):
     threshold = hough_params[0]
     min_angle = np.deg2rad(theta - 20)
     max_angle = np.deg2rad(theta + 20)
-    #Calculate Canny with Canny's threshold (hough_params[1])
+    # Calculate Canny with Canny's threshold (hough_params[1])
     edges = display_canny(image, hough_params[1])
-    #Calculating the hough lines with the Hough Transform's threshold parameter (hough_params[0])
+    # Calculating the hough lines with the Hough Transform's threshold parameter (hough_params[0])
     lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=hough_params[0], min_theta=min_angle,
                            max_theta=max_angle)
-    iterations = 0  #In case we won't be in the loop
+    iterations = 0  # In case we won't be in the loop
     # We have too much lines and number of bins is correct
     while check_threshold_if_load_lines(lines, theta) and check_by_bins(lines, theta) == 0:
         threshold = threshold + 1
@@ -339,11 +339,11 @@ def find_min_max_bins_with_thetas(thetas):
     min_bin_index_with_lines = 0  # Index for first bin with lines
     max_bin_index_with_lines = 0  # Index for last bin with lines
     for i in range(20):
-        if (len(thetas[i]) > 0):
+        if len(thetas[i]) > 0:
             min_bin_index_with_lines = i  # Find the first bin with lines
             break
     for i in range(19, -1, -1):
-        if (len(thetas[i]) > 0):
+        if len(thetas[i]) > 0:
             max_bin_index_with_lines = i  # Find the last bin with lines
             break
     return min_bin_index_with_lines, max_bin_index_with_lines
@@ -351,29 +351,28 @@ def find_min_max_bins_with_thetas(thetas):
 
 def filter_lines_unusual_thetas(lines, theta):
     """
-        This function filters the lines which their thata is not between thatas on side bins.
+        This function filters the lines which their theta is not between thetas on side bins.
 
         Parameters:
         lines (array): The lines from the Hough Transform.
         theta (float): The angle we want the lines to be on (approximately).
 
         Returns:
-        Lines with thatas not in the side bins.
+        Lines with thetas not in the side bins.
 
     """
-    thetas = create_thetas_from_iterations(lines, theta)  # List of thethas of lines
+    thetas = create_thetas_from_iterations(lines, theta)  # List of thetas of lines
     min_bin_index_with_lines = find_min_max_bins_with_thetas(thetas)[0]  # Index for first bin with lines
     max_bin_index_with_lines = find_min_max_bins_with_thetas(thetas)[1]  # Index for last bin with lines
     min_theta_possible = min(find_thetas_possible(theta, thetas, min_bin_index_with_lines, max_bin_index_with_lines)[0],
                              find_thetas_possible(theta, thetas, min_bin_index_with_lines, max_bin_index_with_lines)[
-                                 1])  #minimum theta of all lines
+                                 1])  # minimum theta of all lines
     max_theta_possible = max(find_thetas_possible(theta, thetas, min_bin_index_with_lines, max_bin_index_with_lines)[1],
                              find_thetas_possible(theta, thetas, min_bin_index_with_lines, max_bin_index_with_lines)[
-                                 0])  #maximum theta of all lines
+                                 0])  # maximum theta of all lines
     lines_filtered = []
     for line in lines:
         _rho, _theta = line[0]
-        if (
-                _theta <= max_theta_possible and _theta >= min_theta_possible):  #if theta is between minimum and maximum theta
+        if max_theta_possible >= _theta >= min_theta_possible:  # if theta is between minimum and maximum theta
             lines_filtered.append(line)
     return np.array(lines_filtered)
