@@ -351,7 +351,7 @@ def find_min_max_bins_with_thetas(thetas):
 
 def filter_lines_unusual_thetas(lines, theta):
     """
-        This function filters the lines which their thata is not between thatas on side bins.
+        This function filters the lines which their theta is not between thetas on side bins.
 
         Parameters:
         lines (array): The lines from the Hough Transform.
