@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 import bisect
-from RubiksCubeFace import RubiksCubeFace
+from RubiksCubeTriplet import RubiksCubeFace
 
 
 # I installed a package called kociemba
