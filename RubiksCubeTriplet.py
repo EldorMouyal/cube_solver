@@ -91,19 +91,19 @@ def fill_face(image, horizontal, vertical):
             p4 = find_intersection_point_two_lines(line1=horizontal[i + 1], line2=vertical[j + 1],
                                                    frame_height=image.shape[0],
                                                    frame_width=image.shape[1])
-            p = square_center(p1, p2, p3, p4)
-            cv2.circle(image, p1, 3, (0, 0, 0), -1)
-            cv2.circle(image, p2, 3, (0, 0, 0), -1)
-            cv2.circle(image, p3, 3, (0, 0, 0), -1)
-            cv2.circle(image, p4, 3, (0, 0, 0), -1)
-            cv2.circle(image, p, 3, (0, 100, 0), -1)
+            # p = square_center(p1, p2, p3, p4)
+            # cv2.circle(image, p1, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p2, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p3, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p4, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p, 3, (0, 0, 0), -1)
             color = most_common_color(image=image, points=[p1, p2, p3, p4])
-            print("the most dominant color is: ", color, "\n")
+            # print("the most dominant color is: ", color, "\n")
             colors[color_index] = color
             color_index += 1
-            cv2.imshow("dots", image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("dots", image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
     print(colors)
     return colors
 
@@ -134,19 +134,20 @@ class RubiksCubeTriplet:
         self._fill_right_colors()
 
     def _fill_top_colors(self):
-        vertical = list(reversed(self.obtuse[0:4]))
-        horizontal = self.sharp[0:4]
-        self.top_colors = fill_face(self.image.copy(), vertical, horizontal)
+        # vertical = list(reversed(self.obtuse[0:4]))
+        vertical = self.sharp[0:4]
+        horizontal = self.obtuse[0:4]
+        self.top_colors = fill_face(image=self.image.copy(), vertical=vertical, horizontal=horizontal)
 
     def _fill_left_colors(self):
         vertical = self.vertical[0:4]
         horizontal = self.obtuse[3:7]
-        self.left_colors = fill_face(self.image.copy(), vertical, horizontal)
+        self.left_colors = fill_face(image=self.image.copy(), horizontal=horizontal, vertical=vertical)
 
     def _fill_right_colors(self):
         vertical = self.vertical[3:7]
         horizontal = self.sharp[3:7]
-        self.right_colors = fill_face(self.image.copy(), vertical, horizontal)
+        self.right_colors = fill_face(image=self.image.copy(), vertical=vertical, horizontal=horizontal)
 
 
 

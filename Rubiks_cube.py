@@ -20,8 +20,8 @@
 #              |************|
 #              |*D7**D8**D9*|
 #              |************|
-#  cube = 'DRLU-U-BFBR BLUR-R-LRUB LRDD-F-DLFU FUFF-D-BRDU BRUF-L-LFDD BFLU-B-LRBD'
-#  *our cube = URBF-U-RBDD RUUB-R-FLUU LDDU-F-BULL FRFL-D-DFRF RBBD-L-LLUD DFRF-B-LRBB
+#  cube =     'DRLU-U-BFBR BLUR-R-LRUB LRDD-F-DLFU FUFF-D-BRDU BRUF-L-LFDD BFLU-B-LRBD'
+#  our cube = 'BDDF-U-RURB RBLU-R-UUFU LUUD-F-LDBL FRFL-D-DFRF RDLB-L-UBLD DFRF-B-BRLB'
 #  solved = UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
 #  =>U->R->F->D->L->B
 import kociemba
@@ -40,6 +40,21 @@ def opposite_color(color):
     return opposite_colors.get(color, None)
 
 
+def _reorder_down(colors):
+    t_row = [colors[6], colors[3], colors[0]]
+    m_row = [colors[7], colors[4], colors[1]]
+    d_row = [colors[8], colors[5], colors[2]]
+    return t_row+m_row+d_row
+
+
+def _reorder_left(colors):
+    return colors[::-1]
+
+
+def _reorder_back(colors):
+    return colors[::-1]
+
+
 class rubiks_cube:
     def __init__(self):
         self.color_values = {
@@ -49,7 +64,7 @@ class rubiks_cube:
             'orange': None,
             'blue': None,
             'green': None}
-        self.cube_string = ""
+        self.cube_string = ''
 
     def set_URF(self, up_colors, right_colors, front_colors):
         self.color_values[up_colors[4]] = 'U'
@@ -74,6 +89,9 @@ class rubiks_cube:
         #         self.color_values[back_colors[4]] != 'B'):
         #     print("wrong colors in photo")
         #     return None
+        down_colors = _reorder_down(down_colors)
+        left_colors = _reorder_left(left_colors)
+        back_colors = _reorder_back(back_colors)
         for color in down_colors:
             self.cube_string += self.color_values.get(color)
         for color in left_colors:
@@ -92,3 +110,4 @@ class rubiks_cube:
             print("all faces must be loaded first")
             return None
         return kociemba.solve(self.cube_string)
+
