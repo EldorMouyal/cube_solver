@@ -40,7 +40,6 @@ def _build_cube_by_paths(path_top, path_bottom):
 
 
 def main(name):
-    cube = rubiks_cube()
     top_path = "../cube_17.jpg"
     bottom_path = "../cube_18.jpg"
     cube = _build_cube_by_paths(top_path, bottom_path)
