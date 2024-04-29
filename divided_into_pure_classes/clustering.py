@@ -535,8 +535,8 @@ def main(name):
     cube.set_DLB(down_colors=faces_DLB.top_colors, left_colors=faces_DLB.left_colors, back_colors=faces_DLB.right_colors)
     cube_string = cube.get_cube_string()
     print("cube string:", cube_string)
-    # sol = cube.get_cube_solution()
-    # print("solution: ", sol)
+    sol = cube.get_cube_solution()
+    print("solution: ", sol)
     return
 
 

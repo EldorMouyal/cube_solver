@@ -67,7 +67,7 @@ def most_common_color(image, points):
     for color_name, (lower, upper) in color_ranges.items():
         mask = cv2.inRange(hsv_roi, np.array(lower), np.array(upper))
         color_counts[color_name] = cv2.countNonZero(mask)
-        print(color_name, color_counts[color_name])
+        # print(color_name, color_counts[color_name])
     color_counts["red"] += color_counts["red2"]
     # Get the color with the maximum count
     most_common = max(color_counts, key=color_counts.get)
@@ -91,19 +91,19 @@ def fill_face(image, horizontal, vertical):
             p4 = find_intersection_point_two_lines(line1=horizontal[i + 1], line2=vertical[j + 1],
                                                    frame_height=image.shape[0],
                                                    frame_width=image.shape[1])
-            # p = square_center(p1, p2, p3, p4)
-            # cv2.circle(image, p1, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p2, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p3, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p4, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p, 3, (0, 0, 0), -1)
+            p = square_center(p1, p2, p3, p4)
+            cv2.circle(image, p1, 3, (0, 0, 0), -1)
+            cv2.circle(image, p2, 3, (0, 0, 0), -1)
+            cv2.circle(image, p3, 3, (0, 0, 0), -1)
+            cv2.circle(image, p4, 3, (0, 0, 0), -1)
+            cv2.circle(image, p, 3, (0, 0, 0), -1)
             color = most_common_color(image=image, points=[p1, p2, p3, p4])
-            # print("the most dominant color is: ", color, "\n")
+            print("the most dominant color is: ", color, "\n")
             colors[color_index] = color
             color_index += 1
-            # cv2.imshow("dots", image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+            cv2.imshow("dots", image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
     print(colors)
     return colors
 
