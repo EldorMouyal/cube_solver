@@ -43,10 +43,8 @@ def main(name):
     top_path = "../cube_17.jpg"
     bottom_path = "../cube_18.jpg"
     cube = _build_cube_by_paths(top_path, bottom_path)
-    cube_string = cube.get_cube_string()
-    print("cube string:", cube_string)
-    sol = cube.get_cube_solution()
-    print("solution: ", sol)
+    print("cube string:", cube.get_cube_string())
+    print("solution: ", cube.get_cube_solution())
     return
 
 
