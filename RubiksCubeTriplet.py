@@ -98,7 +98,7 @@ def fill_face(image, horizontal, vertical):
             # cv2.circle(image, p4, 3, (0, 0, 0), -1)
             # cv2.circle(image, p, 3, (0, 0, 0), -1)
             color = most_common_color(image=image, points=[p1, p2, p3, p4])
-            print("the most dominant color is: ", color, "\n")
+            # print("the most dominant color is: ", color, "\n")
             colors[color_index] = color
             color_index += 1
             # cv2.imshow("dots", image)

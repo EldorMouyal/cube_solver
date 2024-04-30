@@ -145,7 +145,7 @@ def get_hough_params(image, theta):
     # If the Cannys' threshold is bigger in the smaller base_threshold
     if params_thres_min[1] > params_thres_max[1]:
         params_res = params_thres_max  # Choose the smaller Canny threshold
-        # If the Cannys' threshold is bigger in the bigger base_threshold
+        # If the Canny threshold is bigger in the bigger base_threshold
     elif params_thres_min[1] < params_thres_max[1]:
         params_res = params_thres_min  # Choose the smaller Canny threshold
     elif params_thres_max[0] == 200:  # If the initial base_threshold is the best threshold

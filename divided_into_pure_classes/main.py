@@ -56,6 +56,7 @@ def main(name):
     if top_path and bottom_path:  # check paths are selected
         cube = _build_cube_by_paths(top_path, bottom_path)
         print("cube string:", cube.get_cube_string())
+        print("to solve the cube, hold it like in the first picture chosen and do the following:")
         print("solution: ", cube.get_cube_solution())
     else:
         print("No files selected.")
