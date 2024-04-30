@@ -1,7 +1,8 @@
 import cv2
-
+import tkinter as tk
+from tkinter import filedialog
 from detect_lines import *
-from clustering import *
+from clustering_updated import *
 from Rubiks_cube import *
 from RubiksCubeTriplet import *
 
@@ -44,13 +45,20 @@ def _build_cube_by_paths(path_top, path_bottom):
 
 
 def main(name):
-    top_path = "../cube_17.jpg"
-    bottom_path = "../cube_18.jpg"
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    # top_path = "../cube_17.jpg"
+    # bottom_path = "../cube_18.jpg"
     # top_path = input("Enter first path: ")
     # bottom_path = input("Enter second path: ")
-    cube = _build_cube_by_paths(top_path, bottom_path)
-    print("cube string:", cube.get_cube_string())
-    print("solution: ", cube.get_cube_solution())
+    top_path = filedialog.askopenfilename(title="Select top image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
+    bottom_path = filedialog.askopenfilename(title="Select bottom image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
+    if top_path and bottom_path:  # check paths are selected
+        cube = _build_cube_by_paths(top_path, bottom_path)
+        print("cube string:", cube.get_cube_string())
+        print("solution: ", cube.get_cube_solution())
+    else:
+        print("No files selected.")
     return
 
 

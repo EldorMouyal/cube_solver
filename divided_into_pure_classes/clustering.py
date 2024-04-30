@@ -464,7 +464,6 @@ def find_closest_theta(rho_theta, arr):
 
 
 def find_grid_for_theta(image, theta: int):
-    print(np.deg2rad(theta))
     headline = "Vertical lines"
     if theta == 60:
         headline = "Sharp theta"

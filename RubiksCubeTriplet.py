@@ -50,7 +50,7 @@ def get_ROI(image, points):
     pts = points_np.reshape((-1, 1, 2))
     cv2.fillPoly(mask, [pts], (255, 255, 255))
     roi = cv2.bitwise_and(image, image, mask=mask)
-    cv2.imshow("roi", roi)
+    # cv2.imshow("Region Of Interest", roi)
     return roi
 
 
@@ -91,19 +91,19 @@ def fill_face(image, horizontal, vertical):
             p4 = find_intersection_point_two_lines(line1=horizontal[i + 1], line2=vertical[j + 1],
                                                    frame_height=image.shape[0],
                                                    frame_width=image.shape[1])
-            p = square_center(p1, p2, p3, p4)
-            cv2.circle(image, p1, 3, (0, 0, 0), -1)
-            cv2.circle(image, p2, 3, (0, 0, 0), -1)
-            cv2.circle(image, p3, 3, (0, 0, 0), -1)
-            cv2.circle(image, p4, 3, (0, 0, 0), -1)
-            cv2.circle(image, p, 3, (0, 0, 0), -1)
+            # p = square_center(p1, p2, p3, p4)
+            # cv2.circle(image, p1, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p2, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p3, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p4, 3, (0, 0, 0), -1)
+            # cv2.circle(image, p, 3, (0, 0, 0), -1)
             color = most_common_color(image=image, points=[p1, p2, p3, p4])
             print("the most dominant color is: ", color, "\n")
             colors[color_index] = color
             color_index += 1
-            cv2.imshow("dots", image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("dots", image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
     print(colors)
     return colors
 
