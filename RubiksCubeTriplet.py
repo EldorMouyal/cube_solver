@@ -104,7 +104,7 @@ def fill_face(image, horizontal, vertical):
             # cv2.imshow("dots", image)
             # cv2.waitKey(0)
             # cv2.destroyAllWindows()
-    print(colors)
+    # print(colors)
     return colors
 
 
@@ -124,8 +124,6 @@ class RubiksCubeTriplet:
         self.vertical = sort_lines_top_by_rho(vertical_lines)
         self.sharp = sort_lines_top_by_rho(sharp_lines)
         self.obtuse = sort_lines_top_by_rho(obtuse_lines)
-        self.center_color = ""
-        # self.colors = [[[0, 0, 0] for _ in range(3)] for _ in range(3)]
         self.top_colors = [""] * 9
         self.left_colors = [""] * 9
         self.right_colors = [""] * 9
@@ -134,7 +132,6 @@ class RubiksCubeTriplet:
         self._fill_right_colors()
 
     def _fill_top_colors(self):
-        # vertical = list(reversed(self.obtuse[0:4]))
         vertical = self.sharp[0:4]
         horizontal = self.obtuse[0:4]
         self.top_colors = fill_face(image=self.image.copy(), vertical=vertical, horizontal=horizontal)
