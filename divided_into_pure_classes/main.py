@@ -1,6 +1,7 @@
 import cv2
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
 from detect_lines import *
 from clustering_updated import *
 from Rubiks_cube import *
@@ -51,13 +52,17 @@ def main(name):
     # bottom_path = "../cube_18.jpg"
     # top_path = input("Enter first path: ")
     # bottom_path = input("Enter second path: ")
+    messagebox.showinfo("Cube solver", "Select image for Up Front Right faces")
     top_path = filedialog.askopenfilename(title="Select top image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
+    messagebox.showinfo("Cube solver", "Select image for Down Left Back faces")
     bottom_path = filedialog.askopenfilename(title="Select bottom image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
     if top_path and bottom_path:  # check paths are selected
         cube = _build_cube_by_paths(top_path, bottom_path)
-        print("cube string:", cube.get_cube_string())
-        print("to solve the cube, hold it like in the first picture chosen and do the following:")
-        print("solution: ", cube.get_cube_solution())
+        # Create a message containing both cube string and solution
+        message = f"Cube string: {cube.get_cube_string()}\n\nCube Solution:\n{cube.get_cube_solution()}"
+
+        # Display the message in a pop-up window
+        messagebox.showinfo("Cube Solver", message)
     else:
         print("No files selected.")
     return
