@@ -52,6 +52,8 @@ def main(name):
     # bottom_path = "../cube_18.jpg"
     # top_path = input("Enter first path: ")
     # bottom_path = input("Enter second path: ")
+    messagebox.showinfo("Cube solver",
+                        "Welcome to Cube Solver, please make sure you have two pictures of the cube before proceeding")
     messagebox.showinfo("Cube solver", "Select image for Up Front Right faces")
     top_path = filedialog.askopenfilename(title="Select top image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
     messagebox.showinfo("Cube solver", "Select image for Down Left Back faces")
@@ -59,10 +61,13 @@ def main(name):
     if top_path and bottom_path:  # check paths are selected
         cube = _build_cube_by_paths(top_path, bottom_path)
         # Create a message containing both cube string and solution
-        message = f"Cube string: {cube.get_cube_string()}\n\nCube Solution:\n{cube.get_cube_solution()}"
-
-        # Display the message in a pop-up window
-        messagebox.showinfo("Cube Solver", message)
+        try:
+            message = f"Cube string: {cube.get_cube_string()}\n\nCube Solution:\n{cube.get_cube_solution()}"
+            messagebox.showinfo("Error", message)
+            return
+        except Exception as e:
+            messagebox.showerror("Error", "Please make sure both your pictures are valid")
+        return
     else:
         print("No files selected.")
     return
