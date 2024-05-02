@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-
+DISPLAY = False
 # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
 color_ranges = {
     'red': ([0, 100, 150], [2, 255, 255]),  # red
@@ -44,13 +44,15 @@ def find_intersection_point_two_lines(line1, line2, frame_width, frame_height) -
 
 
 def get_ROI(image, points):
+    global DISPLAY
     points_np = np.array(points, dtype=np.int32)
     # Extract the ROI by creating an empty image and filling only the polygon created by the points with white.
     mask = np.zeros_like(image[:, :, 0])
     pts = points_np.reshape((-1, 1, 2))
     cv2.fillPoly(mask, [pts], (255, 255, 255))
     roi = cv2.bitwise_and(image, image, mask=mask)
-    # cv2.imshow("Region Of Interest", roi)
+    if DISPLAY:
+        cv2.imshow("Region Of Interest", roi)
     return roi
 
 
@@ -91,19 +93,20 @@ def fill_face(image, horizontal, vertical):
             p4 = find_intersection_point_two_lines(line1=horizontal[i + 1], line2=vertical[j + 1],
                                                    frame_height=image.shape[0],
                                                    frame_width=image.shape[1])
-            # p = square_center(p1, p2, p3, p4)
-            # cv2.circle(image, p1, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p2, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p3, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p4, 3, (0, 0, 0), -1)
-            # cv2.circle(image, p, 3, (0, 0, 0), -1)
             color = most_common_color(image=image, points=[p1, p2, p3, p4])
-            # print("the most dominant color is: ", color, "\n")
+            p = square_center(p1, p2, p3, p4)
+            cv2.circle(image, p1, 3, (0, 0, 0), -1)
+            cv2.circle(image, p2, 3, (0, 0, 0), -1)
+            cv2.circle(image, p3, 3, (0, 0, 0), -1)
+            cv2.circle(image, p4, 3, (0, 0, 0), -1)
+            cv2.circle(image, p, 3, (0, 0, 0), -1)
             colors[color_index] = color
             color_index += 1
-            # cv2.imshow("dots", image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+            if DISPLAY:
+                cv2.imshow("dots", image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                print("the most dominant color is: ", color, "\n")
     # print(colors)
     return colors
 
@@ -119,7 +122,8 @@ def sort_lines_top_by_rho(lines):
 
 
 class RubiksCubeTriplet:
-    def __init__(self, image, vertical_lines, sharp_lines, obtuse_lines):
+    def __init__(self, image, vertical_lines, sharp_lines, obtuse_lines, display=False):
+        global DISPLAY
         self.image = image
         self.vertical = sort_lines_top_by_rho(vertical_lines)
         self.sharp = sort_lines_top_by_rho(sharp_lines)
@@ -130,6 +134,8 @@ class RubiksCubeTriplet:
         self._fill_top_colors()
         self._fill_left_colors()
         self._fill_right_colors()
+        if display:
+            DISPLAY = True
 
     def _fill_top_colors(self):
         vertical = self.sharp[0:4]
