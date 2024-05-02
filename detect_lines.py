@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import bisect
 
-DISPLAY = False
+DISPLAY = True
 
 
 def display_image(image, title):

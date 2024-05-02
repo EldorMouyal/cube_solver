@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-DISPLAY = False
+DISPLAY = True
 # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
 color_ranges = {
     'red': ([0, 100, 150], [2, 255, 255]),  # red

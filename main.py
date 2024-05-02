@@ -25,15 +25,21 @@ def _build_cube_by_paths(path_top, path_bottom):
         print("bad path for image (bottom)")
         return
     top_image = cv2.resize(top_image, (400, 400))
+    top_copy = top_image.copy()
     bottom_image = cv2.resize(bottom_image, (400, 400))
+    bottom_copy = bottom_image.copy()
     cube = rubiks_cube()
 
     top_vertical, top_sharp, top_obtuse = grid_for_image(top_image)
-    # draw_lines_by_polar(image=resized_top_copy, rho_theta=top_obtuse, color=(255, 0, 0))
-    # draw_lines_by_polar(image=resized_top_copy, rho_theta=top_vertical, color=(255, 0, 0))
-    # draw_lines_by_polar(image=resized_top_copy, rho_theta=top_sharp, color=(255, 0, 0))
-    # display_image(resized_top_copy, "cube")
+    draw_lines_by_polar(image=top_copy, rho_theta=top_obtuse, color=(255, 0, 0))
+    draw_lines_by_polar(image=top_copy, rho_theta=top_vertical, color=(255, 0, 0))
+    draw_lines_by_polar(image=top_copy, rho_theta=top_sharp, color=(255, 0, 0))
+    display_image(top_copy, "cube")
     bottom_vertical, bottom_sharp, bottom_obtuse = grid_for_image(bottom_image)
+    draw_lines_by_polar(image=bottom_copy, rho_theta=bottom_obtuse, color=(255, 0, 0))
+    draw_lines_by_polar(image=bottom_copy, rho_theta=bottom_vertical, color=(255, 0, 0))
+    draw_lines_by_polar(image=bottom_copy, rho_theta=bottom_sharp, color=(255, 0, 0))
+    display_image(bottom_copy, "cube")
     faces_URF = RubiksCubeTriplet(image=top_image, vertical_lines=top_vertical, sharp_lines=top_sharp,
                                   obtuse_lines=top_obtuse)
     faces_DLB = RubiksCubeTriplet(image=bottom_image, vertical_lines=bottom_vertical, sharp_lines=bottom_sharp,
