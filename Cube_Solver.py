@@ -75,6 +75,7 @@ def main(name):
             print("Solution:\n", sol)
             input()
         except Exception as e:
+            print(e)
             messagebox.showerror("Error", "Please make sure both your pictures are valid")
             return
     else:
