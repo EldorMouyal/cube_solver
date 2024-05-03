@@ -8,7 +8,7 @@ The Cube Solver program utilizes Kociemba and OpenCV libraries to swiftly provid
 
 1. **Capture Images**: Take two pictures of your Rubik's Cube, ensuring that in each image, three faces of the cube are clearly visible. For optimal results, ensure that your cube has a black base and that the background is a single color. You may take pictures on a blank paper page and crop the images to display only the cube.
 
-2. **Run the Program**: Execute the program from the `main.py` file. You will be prompted to select the two photos you captured.
+2. **Run the Program**: Execute the program from the `Cube_Solver.exe` file. You will be prompted to select the two photos you captured.
 
 3. **View Solution**: The solution will be printed to your console.
 
