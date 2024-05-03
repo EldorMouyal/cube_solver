@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 from detect_lines import *
-from clustering_updated import *
+from clustering import *
 from Rubiks_cube import *
 from RubiksCubeTriplet import *
 
