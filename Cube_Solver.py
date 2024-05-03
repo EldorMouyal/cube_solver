@@ -1,8 +1,6 @@
-import cv2
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
-from detect_lines import *
 from clustering import *
 from Rubiks_cube import *
 from RubiksCubeTriplet import *
@@ -52,6 +50,7 @@ def _build_cube_by_paths(path_top, path_bottom):
 
 
 def main(name):
+    print("Welcome")
     root = tk.Tk()
     root.withdraw()  # Hide the root window
     # top_path = "../cube_17.jpg"
@@ -65,18 +64,22 @@ def main(name):
     messagebox.showinfo("Cube solver", "Select image for Down Left Back faces")
     bottom_path = filedialog.askopenfilename(title="Select bottom image", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
     if top_path and bottom_path:  # check paths are selected
-        cube = _build_cube_by_paths(top_path, bottom_path)
+        print("Both paths accepted building cube model")
         # Create a message containing both cube string and solution
         try:
-            message = f"Cube string: {cube.get_cube_string()}\n\nCube Solution:\n{cube.get_cube_solution()}"
-            messagebox.showinfo("Error", message)
-            return
+            cube = _build_cube_by_paths(top_path, bottom_path)
+            print("Cube model built successfully")
+            sol = cube.get_cube_solution()
+            message = f"Cube string: {cube.get_cube_string()}\n\nCube Solution:\n{sol}"
+            messagebox.showinfo("Cube Solver", message)
+            print("Solution:\n", sol)
+            input()
         except Exception as e:
             messagebox.showerror("Error", "Please make sure both your pictures are valid")
-        return
+            return
     else:
-        print("No files selected.")
-    return
+        print("Please make sure your files are correct and try again.")
+        input()
 
 
 # Press the green button in the gutter to run the script.

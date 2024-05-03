@@ -1,5 +1,4 @@
-import cv2
-import numpy as np
+
 from detect_lines import *
 import bisect
 
@@ -202,8 +201,8 @@ def create_rho_theta_for_vertical(lines, theta_all):
             if x != -1 and y != -1:
                 is_intersect = True
                 break
-        if not is_intersect:  #There are not intersected lines
-            rho_theta.append([rho, theta])  #Taking the line with min rho
+        if not is_intersect:   # There are not intersected lines
+            rho_theta.append([rho, theta])   # Taking the line with min rho
     return rho_theta
 
 
@@ -262,7 +261,7 @@ def filter_lines_distance(rho_theta, theta_all):
         t1 = rho_theta[i][1]
         t2 = rho_theta[i + 1][1]
         distance = get_distance_between_points(r1, r2, t1, t2, theta_all)  # distance calculation
-        if (theta_all == 0 and distance >= 20) or (theta_all != 0 and distance >= 20):  # distance is not too close
+        if (theta_all == 0 and distance >= 30) or (theta_all != 0 and distance >= 20):  # distance is not too close
             rho_theta_new.append(rho_theta[i])  # insert both lines
             rho_theta_new.append(rho_theta[i + 1])
     rho_theta_new.append(rho_theta[len(rho_theta) - 1])
@@ -364,9 +363,9 @@ def filter_with_increase_decrease_thetas(lines):
     """
     new_lines = []
     for i in range(1, len(lines)):
-        if lines[i - 1][1] < lines[i][1]:  # thetas' order is incremental
-            new_lines.append(lines[i - 1])
-    new_lines.append(lines[len(lines) - 1])
+        if lines[i-1][1] < lines[i][1]:  # thetas' order is incremental
+            new_lines.append(lines[i-1])
+    new_lines.append(lines[len(lines)-1])
     return new_lines
 
 
@@ -537,8 +536,7 @@ def find_closest_rho(rho_theta, arr):
             closest_pairs.append(rho_theta[0])
         else:
             # Get the closest pair in rho_theta to y based on the first value in each pair
-            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index - 1][0] else rho_theta[
-                index - 1]
+            closest_pair = rho_theta[index] if rho_theta[index][0] - y < y - rho_theta[index-1][0] else rho_theta[index-1]
             closest_pairs.append(closest_pair)
     return closest_pairs
 
@@ -557,8 +555,7 @@ def find_closest_theta(rho_theta, arr):
             closest_pairs.append(rho_theta[0])
         else:
             # Get the closest pair in rho_theta to y based on the first value in each pair
-            closest_pair = rho_theta[index] if rho_theta[index][1] - y < y - rho_theta[index - 1][1] else rho_theta[
-                index - 1]
+            closest_pair = rho_theta[index] if rho_theta[index][1] - y < y - rho_theta[index-1][1] else rho_theta[index-1]
             closest_pairs.append(closest_pair)
     return closest_pairs
 
@@ -571,11 +568,10 @@ def find_grid_for_theta(image, theta: int):
         headline = "Obtuse theta"
     thresholds = get_hough_params(image, theta)
     edges = display_canny(image, thresholds[1])
-    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,
-                                  hough_threshold=thresholds[0])
-    after_filter_lines = filter_lines_unusual_thetas(lines, theta)
-    if len(after_filter_lines) - len(lines) != 0:
-        lines = after_filter_lines
+    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,hough_threshold=thresholds[0])
+    after_filter_lines = filter_lines_unusual_thetas(lines,theta)
+    if len(after_filter_lines)-len(lines) != 0:
+        lines=after_filter_lines
     if len(after_filter_lines) == 0 or len(lines) == 0:
         print("Picture not good enough")
         exit(1)
@@ -601,3 +597,7 @@ def sort_lines_left_to_right(lines):
 def sort_lines_top_to_bottom(lines):
     sorted_lines = sorted(lines, key=lambda x: x[0])
     return sorted_lines
+
+
+
+

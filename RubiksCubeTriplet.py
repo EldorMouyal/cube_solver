@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-DISPLAY = True
+DISPLAY = False
 # Define the hue ranges for different colors in the HSV (Hue, Saturation, Value) domain
 color_ranges = {
     'red': ([0, 100, 150], [2, 255, 255]),  # red
@@ -103,10 +103,10 @@ def fill_face(image, horizontal, vertical):
             colors[color_index] = color
             color_index += 1
             if DISPLAY:
+                print("the most dominant color is: ", color, "\n")
                 cv2.imshow("dots", image)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-                print("the most dominant color is: ", color, "\n")
     # print(colors)
     return colors
 
