@@ -153,7 +153,7 @@ def filter_closest_pair_to_average_rho(bins):
     return filtered_bins
 
 
-def create_rho_theta_for_not_vertical(lines, theta_all):
+def create_rho_theta_for_not_vertical(lines):
     """
         This function filters not vertical lines according to their closeness and take the max rho from every filtered line.
 
@@ -180,7 +180,7 @@ def create_rho_theta_for_not_vertical(lines, theta_all):
     return rho_theta
 
 
-def create_rho_theta_for_vertical(lines, theta_all):
+def create_rho_theta_for_vertical(lines):
     """
         This function filters vertical lines according to their closeness and take the max rho from every filtered line.
 
@@ -340,7 +340,6 @@ def get_distance_between_points(r1, r2, t1, t2, theta_all):
     """
     x1 = get_x_by_rho_theta(r1, t1, theta_all)
     x2 = get_x_by_rho_theta(r2, t2, theta_all)
-    distance = 0
     if theta_all == 0:  # case for theta 0
         distance = np.sqrt((x2 - x1) ** 2)
     elif theta_all == 60:  # case for theta 60
@@ -381,11 +380,10 @@ def create_rho_theta(lines, theta_all):
         List of lines.
 
     """
-    rho_theta = []
     if theta_all != 0:
-        rho_theta = create_rho_theta_for_not_vertical(lines, np.deg2rad(theta_all))  # filter lines from crossing lines
+        rho_theta = create_rho_theta_for_not_vertical(lines)  # filter lines from crossing lines
     else:
-        rho_theta = create_rho_theta_for_vertical(lines, theta_all)  # filter lines from crossing lines
+        rho_theta = create_rho_theta_for_vertical(lines)  # filter lines from crossing lines
     rho_theta = remove_duplicates(rho_theta)  # remove duplicates
     rho_theta = filter_lines_distance(rho_theta, theta_all)  # distance filtering
     return rho_theta
@@ -432,7 +430,7 @@ def check_dist_small(lines, rho_theta, theta_all, flag):
         lines (array): The lines from the Hough Transform.
         rho_theta (array): The lines after filtering.
         theta_all (float) : The direction angle of the lines.
-        flag (int): 0 for beggining lines, 1 for end lines.
+        flag (int): 0 for beginning lines, 1 for end lines.
 
         Returns:
         True if there is side lines in rho_theta, False otherwise.
@@ -469,7 +467,6 @@ def clustering_lines(image, lines, theta_all):
         New list of lines representing the lines of the cube.
 
     """
-    rho_theta = []
     rhos = []
     thetas = []
     if theta_all != 0:
@@ -479,7 +476,7 @@ def clustering_lines(image, lines, theta_all):
         rho_theta_1 = create_rho_theta(rho_theta_1, theta_all)
         rho_theta = create_rho_theta(lines, theta_all)
     # if after thetas filtering there is a good result
-    if theta_all == 0 and check_dist_too_far(rho_theta_1, theta_all) == False:
+    if theta_all == 0 and not check_dist_too_far(rho_theta_1, theta_all):
         rho_theta = rho_theta_1
     a = 25  # limit to distance theta=0
     b = 20  # limit to distance theta!=0
@@ -568,10 +565,10 @@ def find_grid_for_theta(image, theta: int):
         headline = "Obtuse theta"
     thresholds = get_hough_params(image, theta)
     edges = display_canny(image, thresholds[1])
-    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline,hough_threshold=thresholds[0])
-    after_filter_lines = filter_lines_unusual_thetas(lines,theta)
+    lines = hough_lines_for_theta(image=image, edges=edges, theta=theta, headline=headline, hough_threshold=thresholds[0])
+    after_filter_lines = filter_lines_unusual_thetas(lines, theta)
     if len(after_filter_lines)-len(lines) != 0:
-        lines=after_filter_lines
+        lines = after_filter_lines
     if len(after_filter_lines) == 0 or len(lines) == 0:
         print("Picture not good enough")
         exit(1)
@@ -597,7 +594,3 @@ def sort_lines_left_to_right(lines):
 def sort_lines_top_to_bottom(lines):
     sorted_lines = sorted(lines, key=lambda x: x[0])
     return sorted_lines
-
-
-
-

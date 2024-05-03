@@ -1,8 +1,5 @@
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.cluster import KMeans
-import bisect
 
 DISPLAY = False
 
@@ -11,7 +8,7 @@ def display_image(image, title):
     global DISPLAY
     if not DISPLAY:
         return
-    cv2.imshow("title", image)
+    cv2.imshow(title, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     return
@@ -37,15 +34,12 @@ def draw_lines_by_polar(image, rho_theta, color=(0, 0, 255), thickness=1):
 
 def display_canny(image, low_threshold=50):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
+    edges = cv2.Canny(gray, low_threshold, 150)
     display_image(edges, "Canny edges")
     return edges
 
 
 def hough_lines_for_theta(image, edges, theta: int, headline: str, hough_threshold: int):
-    # Convert the angle range to radians
-    theta_rad = np.deg2rad(theta)
-
     # Define the angle range (in radians)
     min_angle = np.deg2rad(theta - 20)  # Convert to radians
     max_angle = np.deg2rad(theta + 20)  # Convert to radians
@@ -53,7 +47,6 @@ def hough_lines_for_theta(image, edges, theta: int, headline: str, hough_thresho
     # Detect lines using Hough Line Transform
     lines = cv2.HoughLines(edges, rho=2, theta=np.deg2rad(1), threshold=hough_threshold, min_theta=min_angle,
                            max_theta=max_angle)
-    # lines = cv2.HoughLines(edges, 2,  np.pi / 180,  100)
     # Draw the detected lines on the original image
     draw_lines_by_polar(image, lines[:, 0], thickness=2)
     # Display the image with detected lines
@@ -139,27 +132,27 @@ def get_hough_params(image, theta):
         Canny and Hough Transform thresholds.
 
     """
-    params_thres_min = get_hough_params_by_base_threshold(image, theta, 50)
-    params_thres_max = get_hough_params_by_base_threshold(image, theta, 200)
+    params_thresh_min = get_hough_params_by_base_threshold(image, theta, 50)
+    params_thresh_max = get_hough_params_by_base_threshold(image, theta, 200)
     params_res = 0  # The result by the base thresholds
-    # If the Cannys' threshold is bigger in the smaller base_threshold
-    if params_thres_min[1] > params_thres_max[1]:
-        params_res = params_thres_max  # Choose the smaller Canny threshold
+    # If the Canny's threshold is bigger in the smaller base_threshold
+    if params_thresh_min[1] > params_thresh_max[1]:
+        params_res = params_thresh_max  # Choose the smaller Canny threshold
         # If the Canny threshold is bigger in the bigger base_threshold
-    elif params_thres_min[1] < params_thres_max[1]:
-        params_res = params_thres_min  # Choose the smaller Canny threshold
-    elif params_thres_max[0] == 200:  # If the initial base_threshold is the best threshold
+    elif params_thresh_min[1] < params_thresh_max[1]:
+        params_res = params_thresh_min  # Choose the smaller Canny threshold
+    elif params_thresh_max[0] == 200:  # If the initial base_threshold is the best threshold
         # The result will be a weighted average of the bigger base_threshold and the smallest , with
         # more weight to the smallest
-        params_res = int((0.58 * params_thres_min[0] + 0.42 * params_thres_max[0])), params_thres_min[1]
-    elif params_thres_min[0] == 50:  # If the initial base_threshold is the best threshold
+        params_res = int((0.58 * params_thresh_min[0] + 0.42 * params_thresh_max[0])), params_thresh_min[1]
+    elif params_thresh_min[0] == 50:  # If the initial base_threshold is the best threshold
         # The result will be a weighted average of the bigger base_threshold and the smallest , with
         # more weight to the biggest
-        params_res = int((0.42 * params_thres_min[0] + 0.58 * params_thres_max[0])), params_thres_max[1]
+        params_res = int((0.42 * params_thresh_min[0] + 0.58 * params_thresh_max[0])), params_thresh_max[1]
     else:
         # The result will be a weighted average of the bigger base_threshold and the smallest , with
         # more weight to the smallest (more lines preferred from missing lines)
-        params_res = int((0.77 * params_thres_min[0] + 0.23 * params_thres_max[0])), params_thres_min[1]
+        params_res = int((0.77 * params_thresh_min[0] + 0.23 * params_thresh_max[0])), params_thresh_min[1]
     # Result of thresholds after decreasing some lines, if needed
     params_if_load_lines = fix_threshold_if_load_lines(image, theta, params_res)
     # If the difference between the original params and the new params is low (less than 5)
@@ -201,7 +194,7 @@ def get_hough_params_by_base_threshold(image, theta, base_threshold):
             flagForMissing = False  # Back to initial data
             flagForMany = False
             base_threshold = original_base_threshold
-        # Caluclating the hough lines with base_threshold
+        # Calculating the hough lines with base_threshold
         lines = cv2.HoughLines(edges, rho=2, theta=np.pi / 180, threshold=base_threshold, min_theta=min_angle,
                                max_theta=max_angle)
         if lines is None:
@@ -227,7 +220,7 @@ def get_x_by_rho_theta(_rho, _theta, theta):
         Parameters:
         _rho (float): The rho of the line (distance from center to the line).
         _theta (float): The angle of the line (between rho and axis).
-        theta (float): The angle we want the lines to be on (approximately)..
+        theta (float): The angle we want the lines to be on (approximately).
 
         Returns:
         Number which is the result of x.
